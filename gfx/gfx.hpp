@@ -31,6 +31,11 @@ struct GFX {
 		screen.blittr(texture, tsize, tile, x, y, rot, blend);
 	}
 
+	// forward to qbfont
+	void print(const string& str, int x, int y, Color col=WHITE) {
+		qbfont.print(str, x, y, col);
+	}
+
 	// helpers
 	static bool shouldQuit() { return WindowShouldClose(); }
 

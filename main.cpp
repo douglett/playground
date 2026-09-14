@@ -16,7 +16,8 @@ int main() {
 
 	while (!gfx.shouldQuit()) {
 		auto& qb1 = gfx.qbfont.qb13;
-		DrawTexture(qb1.texture, 10, 10, WHITE);
+		DrawTexture(qb1.texture, 10, 100, WHITE);
+		gfx.print("Hello World!", 10, 10, BLUE);
 		gfx.flip();
 	}
 

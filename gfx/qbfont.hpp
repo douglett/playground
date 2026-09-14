@@ -31,9 +31,27 @@ struct QBFont {
 			if (v > 0)  ImageDrawPixel(&image, x, y, WHITE);
 		}
 		// convert to texture
+		font.texw    = fontt.texw;
+		font.texh    = fontt.texh;
+		font.charw   = fontt.charw;
+		font.charh   = fontt.charh;
 		font.texture = LoadTextureFromImage(image);
 		UnloadImage(image);
 		return 0;
+	}
+
+	void print(const string& str, int x, int y, Color col=WHITE) {
+		const Font& font = qb13;
+		Rectangle src = { 0, 0, float(font.charw), float(font.charh) };
+		Vector2   dst = { 0, float(y) };
+		int pitch = font.texw / font.charw;
+		for (size_t i = 0; i < str.size(); i++) {
+			char c = str[i];
+			src.y = (c / pitch) * font.charh;
+			src.x = (c % pitch) * font.charw;
+			dst.x = x + i*font.charw;
+			DrawTextureRec(font.texture, src, dst, col);
+		}
 	}
 };
 
