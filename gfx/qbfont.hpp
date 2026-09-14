@@ -10,6 +10,7 @@ struct QBFont {
 	struct Font   { int texw, texh, charw, charh; Texture2D texture; };
 	static const Font_t qb1_t, qb13_t;
 	Font qb1, qb13;
+	int selectedfont = 13;
 
 	int init() {
 		buildfont(qb1_t,  qb1);
@@ -40,8 +41,16 @@ struct QBFont {
 		return 0;
 	}
 
+	const Font& getselectedfont() {
+		switch (selectedfont) {
+			case 1:   return qb1;
+			case 13:
+			default:  return qb13;
+		}
+	}
+
 	void print(const string& str, int x, int y, Color col=WHITE) {
-		const Font& font = qb13;
+		const Font& font = getselectedfont();
 		Rectangle src = { 0, 0, float(font.charw), float(font.charh) };
 		Vector2   dst = { 0, float(y) };
 		int pitch = font.texw / font.charw;
