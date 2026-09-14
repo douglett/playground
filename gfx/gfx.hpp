@@ -1,6 +1,7 @@
 #pragma once
 #include "raylib.h"
 #include "screen.hpp"
+#include "qbfont.hpp"
 #include "container.hpp"
 #include "shape.hpp"
 #include "sprite.hpp"
@@ -10,9 +11,10 @@ struct GFX {
 	struct rect { int x, y, w, h; };
 
 	Screen screen;
+	QBFont qbfont;
 
 	// forward to screen
-	int  init()    { return screen.init(); }
+	int  init()    { return screen.init() || qbfont.init(); }
 	void destroy() { screen.destroy(); }
 	void begin()   { screen.begin(); }
 	void flip()    { screen.flip(); }
