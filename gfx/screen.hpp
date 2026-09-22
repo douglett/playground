@@ -34,6 +34,10 @@ struct Screen {
 
 	// flip backbuffer to screen
 	void flip() {
+		// recalculate window size
+		if (IsWindowState(FLAG_WINDOW_RESIZABLE))
+			width  = GetScreenWidth()  / zoom,
+			height = GetScreenHeight() / zoom;
 		// show framerate
 		auto fps = to_string(GetFPS());
 		DrawText(fps.c_str(), 1, 1, 10, GREEN);
@@ -43,6 +47,12 @@ struct Screen {
 		EndDrawing();
 		// begin drawing mode for next frame
 		begin();
+	}
+
+	void fullscreen() {
+		IsWindowState(FLAG_BORDERLESS_WINDOWED_MODE)
+			? ClearWindowState(FLAG_BORDERLESS_WINDOWED_MODE)
+			: SetWindowState(FLAG_BORDERLESS_WINDOWED_MODE);
 	}
 
 	static void text(const string& str, int x, int y, Color col=WHITE) {
