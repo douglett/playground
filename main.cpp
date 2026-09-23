@@ -51,4 +51,5 @@ int main() {
 	IProject iproject;
 	iproject.load();
 	iproject.report();
+	iproject.run();
 }

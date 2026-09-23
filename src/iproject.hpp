@@ -1,6 +1,7 @@
 #pragma once
 #include <fstream>
 
+// source file base class
 struct SourceFile {
 	string fpath, fname;
 	bool loaded = false;
@@ -18,11 +19,36 @@ struct SourceFile {
 			lines.push_back(line);
 		return 0;
 	}
+
+	vector<string> split(const string& str) {
+		string s;
+		vector<string> vs;
+		stringstream ss(str);
+		while (ss >> s)  vs.push_back(s);
+		return vs;
+	}
+};
+
+// basic script file parse & interpret
+struct BasScript : SourceFile {
+	int lpos = 0;
+
+	int run() {
+		while (lpos >= 0 && lpos < (int)lines.size()) {
+			auto tok = split(lines[lpos]);
+			cout << "    > ";
+			for (auto t : tok)
+				printf("'%s' ", t.c_str());
+			cout << endl;
+			lpos++;
+		}
+		return 0;
+	}
 };
 
 // interpreter project
 struct IProject : SourceFile {
-	vector<SourceFile> srcfiles;
+	vector<BasScript> srcfiles;
 
 	int load() {
 		fpath = "./wbprojects/";
@@ -53,6 +79,14 @@ struct IProject : SourceFile {
 			if (err)  return err;
 		}
 
+		return 0;
+	}
+
+	int run() {
+		for (auto& src : srcfiles) {
+			int err = src.run();
+			if (err)  return err;
+		}
 		return 0;
 	}
 
