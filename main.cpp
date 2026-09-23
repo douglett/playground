@@ -18,8 +18,7 @@ void painttext() {
 	}
 }
 
-int main() {
-	printf("starting Playground...\n");
+void mainloop() {
 	// setup window
 	gfx.screen.width = 400;
 	gfx.screen.height = 300;
@@ -43,4 +42,13 @@ int main() {
 	}
 
 	gfx.destroy();
+}
+
+int main() {
+	printf("starting Playground...\n");
+	// mainloop();
+
+	IProject iproject;
+	iproject.load();
+	iproject.report();
 }
