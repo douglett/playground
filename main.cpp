@@ -7,7 +7,7 @@ GFX gfx;
 IProject iproject;
 
 void painttext() {
-	auto& f = gfx.qbfont.getselectedfont();
+	auto& f = gfx.font.font();
 	int tw = gfx.screen.width / f.charw;
 	int th = gfx.screen.height / f.charh;
 	// gfx.print(to_string(tw) + " " + to_string(th), 10, 10);
@@ -20,7 +20,7 @@ void painttext() {
 }
 
 void paintedit() {
-	auto& f = gfx.qbfont.getselectedfont();
+	auto& f = gfx.font.font();
 	int screenw = gfx.screen.width / f.charw,
 		screenh = gfx.screen.height / f.charh,
 		lpanelw = 20, 

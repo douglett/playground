@@ -10,7 +10,7 @@ struct QBFont {
 	struct Font   { int texw, texh, charw, charh; Texture2D texture; };
 	static const Font_t qb1_t, qb13_t;
 	Font qb1, qb13;
-	int selectedfont = 13;
+	int selectedid = 13;
 
 	int init() {
 		buildfont(qb1_t,  qb1);
@@ -41,8 +41,8 @@ struct QBFont {
 		return 0;
 	}
 
-	const Font& getselectedfont() {
-		switch (selectedfont) {
+	const Font& font() {
+		switch (selectedid) {
 			case 1:   return qb1;
 			case 13:
 			default:  return qb13;
@@ -50,16 +50,16 @@ struct QBFont {
 	}
 
 	void print(const string& str, int x, int y, Color col=WHITE) {
-		const Font& font = getselectedfont();
-		Rectangle src = { 0, 0, float(font.charw), float(font.charh) };
+		const Font& f = font();
+		Rectangle src = { 0, 0, float(f.charw), float(f.charh) };
 		Vector2   dst = { 0, float(y) };
-		int pitch = font.texw / font.charw;
+		int pitch = f.texw / f.charw;
 		for (size_t i = 0; i < str.size(); i++) {
 			char c = str[i];
-			src.y = (c / pitch) * font.charh;
-			src.x = (c % pitch) * font.charw;
-			dst.x = x + i*font.charw;
-			DrawTextureRec(font.texture, src, dst, col);
+			src.y = (c / pitch) * f.charh;
+			src.x = (c % pitch) * f.charw;
+			dst.x = x + i*f.charw;
+			DrawTextureRec(f.texture, src, dst, col);
 		}
 	}
 };

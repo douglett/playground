@@ -11,10 +11,10 @@ struct GFX {
 	struct rect { int x, y, w, h; };
 
 	Screen screen;
-	QBFont qbfont;
+	QBFont font;
 
 	// forward to screen
-	int  init()    { return screen.init() || qbfont.init(); }
+	int  init()    { return screen.init() || font.init(); }
 	void destroy() { screen.destroy(); }
 	void begin()   { screen.begin(); }
 	void flip()    { screen.flip(); }
@@ -33,7 +33,7 @@ struct GFX {
 
 	// forward to qbfont
 	void print(const string& str, int x, int y, Color col=WHITE) {
-		qbfont.print(str, x, y, col);
+		font.print(str, x, y, col);
 	}
 
 	// helpers
