@@ -1,6 +1,5 @@
 #pragma once
 #include <fstream>
-#include "tokenizer.hpp"
 
 // source file base class
 struct SourceFile {
@@ -24,24 +23,11 @@ struct SourceFile {
 	}
 };
 
-// basic script file parse & interpret
-struct BasScript : SourceFile {
-	int lpos = 0;
-
-	int run() {
-		Tokenizer tok;
-		while (lpos >= 0 && lpos < (int)lines.size()) {
-			tok.reset();
-			tok.tokenizeline(lines[lpos]);
-			tok.show(1);
-			lpos++;
-		}
-		return 0;
-	}
-};
+// basic script file parse
+struct BasScript : SourceFile {};
 
 // interpreter project
-struct IProject : SourceFile {
+struct WBProject : SourceFile {
 	vector<BasScript> srcfiles;
 
 	int load() {
@@ -77,22 +63,14 @@ struct IProject : SourceFile {
 		return 0;
 	}
 
-	int run() {
-		for (auto& src : srcfiles) {
-			int err = src.run();
-			if (err)  return err;
-		}
-		return 0;
-	}
-
-	void report() {
+	void show() {
 		printf("iproject: %s (%s)\n", fname.c_str(), fullpath().c_str());
 		printf("source:\n");
 		for (const auto& f : srcfiles)
 			printf("  %s\n", f.fname.c_str());
 	}
 
-	vector<string> reports() {
+	vector<string> showstr() {
 		vector<string> vs;
 		vs.push_back("iproject: " + fname + " (" + fullpath() +")");
 		vs.push_back("source:");

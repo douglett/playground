@@ -93,10 +93,11 @@ struct Tokenizer {
 			cout << fs << t.str << fs << " ";
 		cout << endl;
 	}
-	string showstr() {
+	string showstr(int fmt=0) {
+		string fs = fmt ? "'" : "";
 		string s = "tokens: ";
 		for (const auto& t : tok)
-			s += t.str + " ";
+			s += fs + t.str + fs + " ";
 		return s;
 	}
 
