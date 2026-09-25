@@ -17,14 +17,30 @@ struct WBRuntime {
 		auto& lines = project.srcfiles[0].lines;
 		Tokenizer tok;
 		while (lpos >= 0 && lpos < (int)lines.size()) {
-			tok.reset();
-			tok.tokenizeline(lines[lpos]);
-			println(tok.showstr(1));
+			tok.reset(), tok.tokenizeline(lines[lpos]);
+			tok.show();
+			// println(tok.showstr(1));
+
+			if (tok.accept("$eof")) ;
+			else if (tok.accept("print")) {
+				if (tok.accept("$number"))
+					print(tok.presult.at(0) + " ");
+				else if (tok.accept("$strlit"))
+					print(tok.stripliteral(tok.presult.at(0)) + " ");
+				else {
+					syntaxerror();
+					break;
+				}
+			} else {
+				syntaxerror();
+				break;
+			}
+
 			lpos++;
 		}
 		
 		println();
-		println("[program end]");
+		println("[-program end-]");
 		return 0;
 	}
 
@@ -39,5 +55,8 @@ struct WBRuntime {
 	}
 	void println(const string& str="") {
 		lines.push_back(str);
+	}
+	void syntaxerror() {
+		println("[-syntax error on line " + to_string(lpos+1) + "-]");
 	}
 };

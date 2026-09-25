@@ -16,7 +16,8 @@ struct SourceFile {
 			return fprintf(stderr, "error opening file: '%s'\n", fullpath().c_str()), 1;
 		printf("opened source file: '%s'\n", fname.c_str());
 		string line;
-		while (getline(fs, line))
+		while (!fs.eof())
+			getline(fs, line),
 			lines.push_back(line);
 		loaded = true;
 		return 0;
