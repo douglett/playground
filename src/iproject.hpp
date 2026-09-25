@@ -1,5 +1,6 @@
 #pragma once
 #include <fstream>
+#include "tokenizer.hpp"
 
 // source file base class
 struct SourceFile {
@@ -19,14 +20,6 @@ struct SourceFile {
 			lines.push_back(line);
 		return 0;
 	}
-
-	vector<string> split(const string& str) {
-		string s;
-		vector<string> vs;
-		stringstream ss(str);
-		while (ss >> s)  vs.push_back(s);
-		return vs;
-	}
 };
 
 // basic script file parse & interpret
@@ -34,12 +27,11 @@ struct BasScript : SourceFile {
 	int lpos = 0;
 
 	int run() {
+		Tokenizer tok;
 		while (lpos >= 0 && lpos < (int)lines.size()) {
-			auto tok = split(lines[lpos]);
-			cout << "    > ";
-			for (auto t : tok)
-				printf("'%s' ", t.c_str());
-			cout << endl;
+			tok.reset();
+			tok.tokenizeline(lines[lpos]);
+			tok.show(1);
 			lpos++;
 		}
 		return 0;
@@ -53,12 +45,13 @@ struct IProject : SourceFile {
 	int load() {
 		fpath = "./wbprojects/";
 		fname = "test.wbproj";
+		srcfiles = {};  // reset
 		int err = SourceFile::load();
 		if (err)  return err;
 
 		// load & parse project file 
 		for (int i = 0; i < (int)lines.size(); i++) {
-			string s = clamp(lines[0]);
+			string s = Tokenizer::clamp(lines[0]);
 			if (s.length() == 0 || s[0] == '#') ;
 			else if (lines[i][0] == '\t')  printf("unexpected indentation on line %d\n", i);
 			else if (s == "name:") ;  // todo
@@ -66,7 +59,7 @@ struct IProject : SourceFile {
 			else if (s == "source:") {
 				for (i++; i < (int)lines.size(); i++) {
 					if (lines[i].length() == 0 || lines[i][0] != '\t')  break;
-					srcfiles.push_back({ fpath, clamp(lines[i]) });
+					srcfiles.push_back({ fpath, Tokenizer::clamp(lines[i]) });
 				}
 			}
 			else
@@ -88,15 +81,6 @@ struct IProject : SourceFile {
 			if (err)  return err;
 		}
 		return 0;
-	}
-
-	string clamp(const string& s) {
-		int i = 0, j = int(s.length())-1;
-		for (; i < (int)s.length(); i++)
-			if (!isspace(s[i]))  break;
-		for (; j >= 0; j--)
-			if (!isspace(s[j]))  break;
-		return s.substr(i, j-i+1);
 	}
 
 	void report() {
