@@ -11,6 +11,7 @@ struct SourceFile {
 	string fullpath() { return fpath + fname; }
 
 	int load() {
+		lines = {}, loaded = false;
 		fstream fs(fullpath(), ios::in);
 		if (!fs.is_open())
 			return fprintf(stderr, "error opening file: '%s'\n", fullpath().c_str()), 1;
@@ -18,6 +19,7 @@ struct SourceFile {
 		string line;
 		while (getline(fs, line))
 			lines.push_back(line);
+		loaded = true;
 		return 0;
 	}
 };
@@ -88,5 +90,14 @@ struct IProject : SourceFile {
 		printf("source:\n");
 		for (const auto& f : srcfiles)
 			printf("  %s\n", f.fname.c_str());
+	}
+
+	vector<string> reports() {
+		vector<string> vs;
+		vs.push_back("iproject: " + fname + " (" + fullpath() +")");
+		vs.push_back("source:");
+		for (const auto& f : srcfiles)
+			vs.push_back("  " + f.fname);
+		return vs;
 	}
 };

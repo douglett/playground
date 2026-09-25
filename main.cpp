@@ -4,6 +4,7 @@ using namespace std;
 
 // define globals
 GFX gfx;
+IProject iproject;
 
 void painttext() {
 	auto& f = gfx.qbfont.getselectedfont();
@@ -18,11 +19,36 @@ void painttext() {
 	}
 }
 
+void paintedit() {
+	auto& f = gfx.qbfont.getselectedfont();
+	int screenw = gfx.screen.width / f.charw,
+		screenh = gfx.screen.height / f.charh,
+		lpanelw = 20, 
+		rpanelw = screenw - lpanelw - 1,
+		marginw = 3;
+	
+	string s;
+	auto lines = iproject.reports();
+	for (size_t i = 0; i < lines.size(); i++)
+		gfx.print(lines[i].substr(0, lpanelw), 0, i*f.charh);
+	s = string() + char(163);
+	for (int i = 0; i < screenh; i++)
+		gfx.print(s, lpanelw*f.charw, i*f.charh);
+	if (iproject.srcfiles.size()) {
+		auto& lines = iproject.srcfiles[0].lines;
+		for (size_t i = 0; i < lines.size(); i++) {
+			s = (i < 10 ? " " : "") + to_string(i+1);
+			gfx.print(s, (lpanelw+1)*f.charw, i*f.charw, BLUE);
+			gfx.print(lines[i].substr(0, rpanelw-marginw), (lpanelw+1+marginw)*f.charw, i*f.charh);
+		}
+	}
+}
+
 void mainloop() {
 	// setup window
-	gfx.screen.width = 400;
-	gfx.screen.height = 300;
-	gfx.screen.zoom = 2;
+	gfx.screen.width = 800;
+	gfx.screen.height = 600;
+	gfx.screen.zoom = 1;
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	gfx.init();
 	// SetWindowState(FLAG_WINDOW_RESIZABLE);
@@ -31,13 +57,10 @@ void mainloop() {
 		if ((IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) && IsKeyPressed(KEY_ENTER))
 			gfx.screen.fullscreen();
 
-		// auto z = gfx.screen.zoom;
-		// DrawRectangle(10, 10, (GetScreenWidth()/z)-20, (GetScreenHeight()/z)-20, Color{64, 0, 255, 128});
+		// DrawTexture(gfx.qbfont.getselectedfont().texture, 50, 50, WHITE);
 
-		// DrawTexture(gfx.qbfont.qb13.texture, 10, 100, WHITE);
-		// gfx.print("Hello World!", 10, 10, BLUE);
-
-		painttext();
+		// painttext();
+		paintedit();
 		gfx.flip();
 	}
 
@@ -46,10 +69,10 @@ void mainloop() {
 
 int main() {
 	printf("starting Playground...\n");
-	// mainloop();
-
-	IProject iproject;
+	
 	iproject.load();
-	iproject.report();
-	iproject.run();
+	// iproject.report();
+	// iproject.run();
+	
+	mainloop();
 }

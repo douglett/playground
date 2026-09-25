@@ -9,6 +9,7 @@ struct Screen {
 	float zoom = 4;
 	Color bgcolor = BLACK;
 	Camera2D camera = {0};
+	int flag_fps = 0;
 
 	int init() {
 		SetTraceLogLevel(LOG_WARNING);
@@ -39,8 +40,8 @@ struct Screen {
 			width  = GetScreenWidth()  / zoom,
 			height = GetScreenHeight() / zoom;
 		// show framerate
-		auto fps = to_string(GetFPS());
-		DrawText(fps.c_str(), 1, 1, 10, GREEN);
+		if (flag_fps)
+			DrawText(to_string(GetFPS()).c_str(), 1, 1, 10, GREEN);
 		// Qbfont.Text(fps, scr.Width - len(fps)*4 - 2, 2, ray.Green)
 		// flip
 		EndMode2D();
