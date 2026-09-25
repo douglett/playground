@@ -27,19 +27,21 @@ void paintedit() {
 		rpanelw = screenw - lpanelw - 1,
 		marginw = 3;
 	
+	DrawRectangle(0, 0, gfx.screen.width, f.charh, DARKGRAY);
+	gfx.print("f5:run f6:stop", 0, 0, BLUE);
 	string s;
 	auto lines = iproject.reports();
 	for (size_t i = 0; i < lines.size(); i++)
-		gfx.print(lines[i].substr(0, lpanelw), 0, i*f.charh);
+		gfx.print(lines[i].substr(0, lpanelw), 0, (i+1)*f.charh);
 	s = string() + char(163);
 	for (int i = 0; i < screenh; i++)
-		gfx.print(s, lpanelw*f.charw, i*f.charh);
+		gfx.print(s, lpanelw*f.charw, (i+1)*f.charh);
 	if (iproject.srcfiles.size()) {
 		auto& lines = iproject.srcfiles[0].lines;
 		for (size_t i = 0; i < lines.size(); i++) {
 			s = (i < 10 ? " " : "") + to_string(i+1);
-			gfx.print(s, (lpanelw+1)*f.charw, i*f.charw, BLUE);
-			gfx.print(lines[i].substr(0, rpanelw-marginw), (lpanelw+1+marginw)*f.charw, i*f.charh);
+			gfx.print(s, (lpanelw+1)*f.charw, (i+1)*f.charh, BLUE);
+			gfx.print(lines[i].substr(0, rpanelw-marginw), (lpanelw+1+marginw)*f.charw, (i+1)*f.charh);
 		}
 	}
 }
