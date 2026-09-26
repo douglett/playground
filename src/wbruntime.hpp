@@ -86,6 +86,7 @@ struct WBRuntime {
 	int accept (const string& rule) { return tok.accept(rule); }
 	int require(const string& rule) { if (!tok.require(rule)) syntaxerror(); return true; }
 	void syntaxerror() {
+		println();
 		println("[-syntax error on line " + to_string(lpos+1) + "-]");
 		throw runtime_error(lines.back());
 	}
@@ -97,7 +98,8 @@ struct WBRuntime {
 	}
 	void println(int i) { println(to_string(i)); }
 	void println(const string& str="") {
-		lines.push_back(str);
+		print(str);
+		lines.push_back("");
 	}
 
 	int stackget(const string& id) {
