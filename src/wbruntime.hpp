@@ -7,9 +7,14 @@ extern WBProject project;
 struct WBRuntime {
 	vector<string> lines;
 	map<string, int> globals;
+	Tokenizer tok;
 	int fpos = 0, lpos = 0;
 
 	int run() {
+		try { return irun(); }
+		catch (runtime_error& e) { return 1; }
+	}
+	int irun() {
 		reset();
 		if (project.srcfiles.size() == 0)
 			return println("[no source files]"), 0;
@@ -17,33 +22,31 @@ struct WBRuntime {
 		printf("[program start]\n");
 		
 		auto& lines = project.srcfiles[0].lines;
-		Tokenizer tok;
 		while (lpos >= 0 && lpos < (int)lines.size()) {
 			tok.reset(), tok.tokenizeline(lines[lpos]);
 			tok.show();
 			// println(tok.showstr(1));
 
-			if (tok.accept("$eof")) ;
-			else if (tok.accept("print")) {
+			if (accept("$eof")) ;
+			else if (accept("print")) {
 				while (!tok.eof())
-					if (tok.accept("$number"))
+					if (accept("$number"))
 						print(tok.presult.at(0) + " ");
-					else if (tok.accept("$strlit"))
+					else if (accept("$strlit"))
 						print(tok.stripliteral(tok.presult.at(0)) + " ");
-					else if (tok.accept("$identifier"))
+					else if (accept("$identifier"))
 						print(stackget(tok.presult.at(0)));
 					else
-						{ syntaxerror(); break; }
+						syntaxerror();
 				println();
-			} else if (tok.accept("dim")) {
-				tok.require("$identifier = $number $eof");
+			} else if (accept("dim")) {
+				require("$identifier = $number $eof");
 				string id = tok.presult.at(0);
 				int    i  = stoi(tok.presult.at(2));
 				if (globals.count(id))  syntaxerror();
 				globals[id] = i;
 			} else {
 				syntaxerror();
-				break;
 			}
 
 			lpos++;
@@ -58,8 +61,12 @@ struct WBRuntime {
 		lines = {};
 		fpos = lpos = 0;
 	}
+	int peek   (const string& rule) { return tok.peek(rule); }
+	int accept (const string& rule) { return tok.accept(rule); }
+	int require(const string& rule) { if (!tok.require(rule)) syntaxerror(); return true; }
 	void syntaxerror() {
 		println("[-syntax error on line " + to_string(lpos+1) + "-]");
+		throw runtime_error(lines.back());
 	}
 
 	void print(int i) { print(to_string(i)); }
