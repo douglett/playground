@@ -10,29 +10,29 @@
 struct GFX {
 	struct rect { int x, y, w, h; };
 
-	Screen screen;
-	QBFont font;
+	static inline Screen screen;
+	static inline QBFont font;
 
 	// forward to screen
-	int  init()    { return screen.init() || font.init(); }
-	void destroy() { screen.destroy(); }
-	void begin()   { screen.begin(); }
-	void flip()    { screen.flip(); }
+	static int  init()    { return screen.init() || font.init(); }
+	static void destroy() { screen.destroy(); }
+	static void begin()   { screen.begin(); }
+	static void flip()    { screen.flip(); }
 
-	void text(const string& str, int x, int y, Color col=WHITE) {
+	static void text(const string& str, int x, int y, Color col=WHITE) {
 		screen.text(str, x, y, col);
 	}
 
-	void blitt(Texture2D texture, int tsize, int tile, int x, int y, Color blend=WHITE) {
+	static void blitt(Texture2D texture, int tsize, int tile, int x, int y, Color blend=WHITE) {
 		screen.blitt(texture, tsize, tile, x, y, blend);
 	}
 
-	void blittr(Texture2D texture, int tsize, int tile, int x, int y, float rot, Color blend=WHITE) {
+	static void blittr(Texture2D texture, int tsize, int tile, int x, int y, float rot, Color blend=WHITE) {
 		screen.blittr(texture, tsize, tile, x, y, rot, blend);
 	}
 
 	// forward to qbfont
-	void print(const string& str, int x, int y, Color col=WHITE) {
+	static void print(const string& str, int x, int y, Color col=WHITE) {
 		font.print(str, x, y, col);
 	}
 
