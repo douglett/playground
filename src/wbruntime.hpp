@@ -10,11 +10,18 @@ struct WBRuntime {
 	Tokenizer tok;
 	int fpos = 0, lpos = 0;
 
+	void reset() {
+		lines = {};
+		globals = {};
+		tok.reset();
+		fpos = lpos = 0;
+	}
+
 	int run() {
-		try { return irun(); }
+		try { return prun(); }
 		catch (runtime_error& e) { return 1; }
 	}
-	int irun() {
+	int prun() {
 		reset();
 		if (project.srcfiles.size() == 0)
 			return println("[no source files]"), 0;
@@ -40,9 +47,10 @@ struct WBRuntime {
 						syntaxerror();
 				println();
 			} else if (accept("dim")) {
-				require("$identifier = $number $eof");
+				require("$identifier =");
 				string id = tok.presult.at(0);
-				int    i  = stoi(tok.presult.at(2));
+				int i = pexpr();
+				require("$eof");
 				if (globals.count(id))  syntaxerror();
 				globals[id] = i;
 			} else {
@@ -57,10 +65,23 @@ struct WBRuntime {
 		return 0;
 	}
 
-	void reset() {
-		lines = {};
-		fpos = lpos = 0;
+	int pexpr() {
+		if (!accept("$number"))  return false;
+		int i = stoi(tok.presult.at(0));
+		// TODO: order-of-prescedence, brackets, strings
+		while (accept("+") || accept("-") || accept("*") || accept("/")) {
+			auto op = tok.presult.at(0);
+			require("$number");
+			int n = stoi(tok.presult.at(0));
+			if      (op == "+")  i += n;
+			else if (op == "-")  i -= n;
+			else if (op == "*")  i *= n;
+			else if (op == "/")  i /= n;
+			else    syntaxerror();
+		}
+		return i;
 	}
+
 	int peek   (const string& rule) { return tok.peek(rule); }
 	int accept (const string& rule) { return tok.accept(rule); }
 	int require(const string& rule) { if (!tok.require(rule)) syntaxerror(); return true; }
