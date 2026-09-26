@@ -46,12 +46,14 @@ struct WBRuntime {
 					else
 						syntaxerror();
 				println();
-			} else if (accept("dim")) {
+			} else if (accept("dim") || accept("let")) {
+				bool isdim = tok.presult.at(0) == "dim";
 				require("$identifier =");
 				string id = tok.presult.at(0);
 				int i = pexpr();
 				require("$eof");
-				if (globals.count(id))  syntaxerror();
+				if ( isdim &&  globals.count(id))  syntaxerror();
+				if (!isdim && !globals.count(id))  syntaxerror();
 				globals[id] = i;
 			} else {
 				syntaxerror();
@@ -66,13 +68,17 @@ struct WBRuntime {
 	}
 
 	int pexpr() {
-		if (!accept("$number"))  return false;
-		int i = stoi(tok.presult.at(0));
+		int i = 0;
+		if      (accept("$number"))      i = stoi(tok.presult.at(0));
+		else if (accept("$identifier"))  i = stackget(tok.presult.at(0));
+		else    return false;
 		// TODO: order-of-prescedence, brackets, strings
 		while (accept("+") || accept("-") || accept("*") || accept("/")) {
 			auto op = tok.presult.at(0);
-			require("$number");
-			int n = stoi(tok.presult.at(0));
+			int n = 0;
+			if      (accept("$number"))      n = stoi(tok.presult.at(0));
+			else if (accept("$identifier"))  n = stackget(tok.presult.at(0));
+			else    syntaxerror();
 			if      (op == "+")  i += n;
 			else if (op == "-")  i -= n;
 			else if (op == "*")  i *= n;
