@@ -9,7 +9,7 @@ struct Tokenizer {
 	struct Tok { string str; int lpos; int hpos; };
 	const Tok TOK_EOF = { "$EOF", -1, -1 };
 	const int flag_eol = 0;
-	const string lcomment = "#";
+	const string lcomment = "'";
 	vector<Tok> tok;
 	vector<string> presult;
 	string fname, errormsg;
