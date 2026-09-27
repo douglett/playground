@@ -1,6 +1,7 @@
 #pragma once
 #include "wbproject.hpp"
 #include <map>
+#include <format>
 
 extern WBProject project;
 
@@ -31,8 +32,8 @@ struct WBRuntime {
 		auto& lines = project.srcfiles[0].lines;
 		while (lpos >= 0 && lpos < (int)lines.size()) {
 			tok.reset(), tok.tokenizeline(lines[lpos]);
-			tok.show();
-			// println(tok.showstr(1));
+			printf("L%02d: ", lpos+1), tok.show();
+			// println(format( "L{:02}: {}", lpos+1, tok.showstr(1) ));
 
 			if (accept("$eof")) ;
 			else if (accept("print")) {
