@@ -53,15 +53,16 @@ struct WBRuntime {
 				bool isdim = tok.presult.at(0) == "dim";
 				require("$identifier =");
 				string id = tok.presult.at(0);
-				if ( isdim &&  globals.count(id))  syntaxerror();
-				if (!isdim && !globals.count(id))  syntaxerror();
+				if (isdim && globals.count(id))  syntaxerror();
 				// assign type
 				if (string s; pexprs(s)) {
-					if (!isdim && !get_if<string>(&globals.at(id)))  syntaxerror();
-					globals[id] = s;
+					if (isdim)  globals[id] = s;
+					else        memgets(id) = s;
+				} else if (int i = 0; pexpr(i)) {
+					if (isdim)  globals[id] = i;
+					else        memgeti(id) = i;
 				} else {
-					int i = pexpr();
-					globals[id] = i;
+					syntaxerror();
 				}
 				require("$eof");
 			} else {
@@ -76,12 +77,11 @@ struct WBRuntime {
 		return 0;
 	}
 
-	int pexpr() {
-		int i = 0;
+	int pexpr(int& i) {
 		if      (accept("$number"))      i = stoi(tok.presult.at(0));
 		else if (accept("$identifier"))  i = memgeti(tok.presult.at(0));
 		else    return false;
-		// TODO: order-of-prescedence, brackets, strings
+		// TODO: order-of-prescedence, brackets
 		while (accept("+") || accept("-") || accept("*") || accept("/")) {
 			auto op = tok.presult.at(0);
 			int n = 0;
@@ -94,7 +94,7 @@ struct WBRuntime {
 			else if (op == "/")  i /= n;
 			else    syntaxerror();
 		}
-		return i;
+		return true;
 	}
 
 	int pexprs(string& result) {
@@ -132,10 +132,16 @@ struct WBRuntime {
 		if (!globals.count(id))  syntaxerror();
 		return globals.at(id);
 	}
-	int memgeti(const string& id) {
-		if (!globals.count(id))  syntaxerror();
-		auto& m = globals.at(id);
-		if (int *i = get_if<int>(&m))  return *i;
-		return syntaxerror(), 0;
+	int& memgeti(const string& id) {
+		static int temp = 0;
+		auto& m = memget(id);
+		if (int* i = get_if<int>(&m))  return *i;
+		return syntaxerror(), temp;
+	}
+	string& memgets(const string& id) {
+		static string temp;
+		auto& m = memget(id);
+		if (string* s = get_if<string>(&m))  return *s;
+		return syntaxerror(), temp;
 	}
 };
