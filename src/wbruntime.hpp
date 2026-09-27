@@ -13,54 +13,39 @@ struct WBRuntime {
 	Tokenizer tok;
 	int fpos = 0, lpos = 0;
 
-	void reset() {
-		lines = {};
-		globals = {};
-		tok.reset();
-		fpos = lpos = 0;
-	}
-
 	int run() {
-		try { return prun(); }
-		catch (runtime_error& e) { return 1; }
-	}
-	int prun() {
-		reset();
+		// reset
+		lines = {}, globals = {}, tok.reset();
+		fpos = lpos = 0;
+		// indicate start
 		if (project.srcfiles.size() == 0)
 			return println("[no source files]"), 0;
-		// println("[program start]");
 		printf("[program start]\n");
-		
+		// run block
+		try { return pblock(); }
+		catch (runtime_error& e) { return 1; }
+	}
+
+	// -- Parse Helpers --
+	int peek   (const string& rule) { return tok.peek(rule); }
+	int accept (const string& rule) { return tok.accept(rule); }
+	int require(const string& rule) { if (!tok.require(rule)) syntaxerror(); return true; }
+
+	// -- Parse Statements --
+	int pblock() {
 		auto& lines = project.srcfiles[0].lines;
 		while (lpos >= 0 && lpos < (int)lines.size()) {
 			tok.reset(), tok.tokenizeline(lines[lpos]);
 			printf("L%02d: ", lpos+1), tok.show();
 			// println(format( "L{:02}: {}", lpos+1, tok.showstr(1) ));
-
-			if (accept("$eof")) ;
+			// run statement
+			if      (accept("$eof")) ;
 			else if (pprint()) ;
-			else if (accept("dim") || accept("let")) {
-				bool isdim = tok.presult.at(0) == "dim";
-				require("$identifier =");
-				string id = tok.presult.at(0);
-				if (isdim && globals.count(id))  syntaxerror();
-				// assign type
-				if (string s; pexprs(s)) {
-					if (isdim)  globals[id] = s;
-					else        memgets(id) = s;
-				} else if (int i = 0; pexpr(i)) {
-					if (isdim)  globals[id] = i;
-					else        memgeti(id) = i;
-				} else {
-					syntaxerror();
-				}
-				require("$eof");
-			}
+			else if (pdim()) ;
+			else if (plet()) ;
 			else if (pinput()) ;
-			else {
-				syntaxerror();
-			}
-
+			else    syntaxerror();
+			// next
 			lpos++;
 		}
 		
@@ -69,16 +54,26 @@ struct WBRuntime {
 		return 0;
 	}
 
-	// int pdim() {
-	// 	if (!accept("dim"))  return false;
-	// 	require("$identifier =");
-	// 	string id = tok.presult.at(0);
-	// 	if      (globals.count(id))     syntaxerror();
-	// 	else if (string s;  pexprs(s))  globals[id] = s;
-	// 	else if (int i = 0; pexpr(i))   globals[id] = i;
-	// 	else    syntaxerror();
-	// 	return true;
-	// }
+	int pdim() {
+		if (!accept("dim"))  return false;
+		require("$identifier =");
+		string id = tok.presult.at(0);
+		if      (globals.count(id))     syntaxerror();
+		else if (string s;  pexprs(s))  globals[id] = s;
+		else if (int i = 0; pexpr(i))   globals[id] = i;
+		else    syntaxerror();
+		return true;
+	}
+
+	int plet() {
+		if (!accept("let"))  return false;
+		require("$identifier =");
+		string id = tok.presult.at(0);
+		if      (string s;  pexprs(s))  memgets(id) = s;
+		else if (int i = 0; pexpr(i))   memgeti(id) = i;
+		else    syntaxerror();
+		return true;
+	}
 
 	int pprint() {
 		if (!accept("print"))  return false;
@@ -129,21 +124,20 @@ struct WBRuntime {
 		return 0;
 	}
 
-	int peek   (const string& rule) { return tok.peek(rule); }
-	int accept (const string& rule) { return tok.accept(rule); }
-	int require(const string& rule) { if (!tok.require(rule)) syntaxerror(); return true; }
+	// -- Errors --
 	void syntaxerror() {
 		println();
 		println("[-syntax error on line " + to_string(lpos+1) + "-]");
 		throw runtime_error(lines.back());
 	}
 
+	// -- Runtime Output --
 	// void print(int i) { print(to_string(i)); }
 	void print(const Mem_T& m) {
 		if (const int* i = get_if<int>(&m))
-			print(to_string(*i));
+		print(to_string(*i));
 		else if (const string* s = get_if<string>(&m))
-			print(*s);
+		print(*s);
 	}
 	void print(const string& str="") {
 		if (lines.size() == 0)  lines.push_back("");
@@ -153,7 +147,8 @@ struct WBRuntime {
 		print(str);
 		lines.push_back("");
 	}
-
+	
+	// -- Runtime Memory --
 	Mem_T& memget(const string& id) {
 		if (!globals.count(id))  syntaxerror();
 		return globals.at(id);
