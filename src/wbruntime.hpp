@@ -38,18 +38,8 @@ struct WBRuntime {
 			// println(format( "L{:02}: {}", lpos+1, tok.showstr(1) ));
 
 			if (accept("$eof")) ;
-			else if (accept("print")) {
-				while (!tok.eof())
-					if (accept("$number"))
-						print(tok.presult.at(0) + " ");
-					else if (accept("$strlit"))
-						print(tok.stripliteral(tok.presult.at(0)) + " ");
-					else if (accept("$identifier"))
-						print(memget(tok.presult.at(0)));
-					else
-						syntaxerror();
-				println();
-			} else if (accept("dim") || accept("let")) {
+			else if (pprint()) ;
+			else if (accept("dim") || accept("let")) {
 				bool isdim = tok.presult.at(0) == "dim";
 				require("$identifier =");
 				string id = tok.presult.at(0);
@@ -65,7 +55,9 @@ struct WBRuntime {
 					syntaxerror();
 				}
 				require("$eof");
-			} else {
+			}
+			else if (pinput()) ;
+			else {
 				syntaxerror();
 			}
 
@@ -75,6 +67,40 @@ struct WBRuntime {
 		println();
 		println("[-program end-]");
 		return 0;
+	}
+
+	// int pdim() {
+	// 	if (!accept("dim"))  return false;
+	// 	require("$identifier =");
+	// 	string id = tok.presult.at(0);
+	// 	if      (globals.count(id))     syntaxerror();
+	// 	else if (string s;  pexprs(s))  globals[id] = s;
+	// 	else if (int i = 0; pexpr(i))   globals[id] = i;
+	// 	else    syntaxerror();
+	// 	return true;
+	// }
+
+	int pprint() {
+		if (!accept("print"))  return false;
+		while (!tok.eof())
+			if (accept("$number"))
+				print(tok.presult.at(0) + " ");
+			else if (accept("$strlit"))
+				print(tok.stripliteral(tok.presult.at(0)) + " ");
+			else if (accept("$identifier"))
+				print(memget(tok.presult.at(0)));
+			else
+				syntaxerror();
+		println();
+		return true;
+	}
+
+	int pinput() {
+		if (!accept("input"))  return false;
+		require("$identifier $eof");
+		auto id = tok.presult.at(0);
+		syntaxerror();
+		return true;
 	}
 
 	int pexpr(int& i) {

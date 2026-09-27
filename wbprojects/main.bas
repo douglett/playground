@@ -9,5 +9,7 @@ let b = a * a
 print b
 
 dim txt = "hello world 2"
+let txt = "blah"
 print txt
-' input 
+
+' input txt
