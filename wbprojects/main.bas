@@ -7,3 +7,7 @@ print b
 
 let b = a * a
 print b
+
+dim txt = "hello world 2"
+print txt
+' input 

@@ -2,12 +2,14 @@
 #include "wbproject.hpp"
 #include <map>
 #include <format>
+#include <variant>
 
 extern WBProject project;
 
 struct WBRuntime {
+	typedef variant<int, string> Mem_T;
 	vector<string> lines;
-	map<string, int> globals;
+	map<string, Mem_T> globals;
 	Tokenizer tok;
 	int fpos = 0, lpos = 0;
 
@@ -43,7 +45,7 @@ struct WBRuntime {
 					else if (accept("$strlit"))
 						print(tok.stripliteral(tok.presult.at(0)) + " ");
 					else if (accept("$identifier"))
-						print(stackget(tok.presult.at(0)));
+						print(memget(tok.presult.at(0)));
 					else
 						syntaxerror();
 				println();
@@ -51,11 +53,17 @@ struct WBRuntime {
 				bool isdim = tok.presult.at(0) == "dim";
 				require("$identifier =");
 				string id = tok.presult.at(0);
-				int i = pexpr();
-				require("$eof");
 				if ( isdim &&  globals.count(id))  syntaxerror();
 				if (!isdim && !globals.count(id))  syntaxerror();
-				globals[id] = i;
+				// assign type
+				if (string s; pexprs(s)) {
+					if (!isdim && !get_if<string>(&globals.at(id)))  syntaxerror();
+					globals[id] = s;
+				} else {
+					int i = pexpr();
+					globals[id] = i;
+				}
+				require("$eof");
 			} else {
 				syntaxerror();
 			}
@@ -71,14 +79,14 @@ struct WBRuntime {
 	int pexpr() {
 		int i = 0;
 		if      (accept("$number"))      i = stoi(tok.presult.at(0));
-		else if (accept("$identifier"))  i = stackget(tok.presult.at(0));
+		else if (accept("$identifier"))  i = memgeti(tok.presult.at(0));
 		else    return false;
 		// TODO: order-of-prescedence, brackets, strings
 		while (accept("+") || accept("-") || accept("*") || accept("/")) {
 			auto op = tok.presult.at(0);
 			int n = 0;
 			if      (accept("$number"))      n = stoi(tok.presult.at(0));
-			else if (accept("$identifier"))  n = stackget(tok.presult.at(0));
+			else if (accept("$identifier"))  n = memgeti(tok.presult.at(0));
 			else    syntaxerror();
 			if      (op == "+")  i += n;
 			else if (op == "-")  i -= n;
@@ -87,6 +95,12 @@ struct WBRuntime {
 			else    syntaxerror();
 		}
 		return i;
+	}
+
+	int pexprs(string& result) {
+		if (accept("$strlit"))
+			return result = tok.stripliteral(tok.presult.at(0)), 1;
+		return 0;
 	}
 
 	int peek   (const string& rule) { return tok.peek(rule); }
@@ -98,19 +112,30 @@ struct WBRuntime {
 		throw runtime_error(lines.back());
 	}
 
-	void print(int i) { print(to_string(i)); }
+	// void print(int i) { print(to_string(i)); }
+	void print(const Mem_T& m) {
+		if (const int* i = get_if<int>(&m))
+			print(to_string(*i));
+		else if (const string* s = get_if<string>(&m))
+			print(*s);
+	}
 	void print(const string& str="") {
 		if (lines.size() == 0)  lines.push_back("");
 		lines.back() += str;
 	}
-	void println(int i) { println(to_string(i)); }
 	void println(const string& str="") {
 		print(str);
 		lines.push_back("");
 	}
 
-	int stackget(const string& id) {
+	Mem_T& memget(const string& id) {
 		if (!globals.count(id))  syntaxerror();
 		return globals.at(id);
+	}
+	int memgeti(const string& id) {
+		if (!globals.count(id))  syntaxerror();
+		auto& m = globals.at(id);
+		if (int *i = get_if<int>(&m))  return *i;
+		return syntaxerror(), 0;
 	}
 };
