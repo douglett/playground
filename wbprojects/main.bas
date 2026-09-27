@@ -12,4 +12,5 @@ dim txt = "hello world 2"
 let txt = "blah"
 print txt
 
+' let txt = 1
 ' input txt

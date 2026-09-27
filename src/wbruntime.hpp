@@ -58,7 +58,7 @@ struct WBRuntime {
 		if (!accept("dim"))  return false;
 		require("$identifier =");
 		string id = tok.presult.at(0);
-		if      (globals.count(id))     syntaxerror();
+		if      (globals.count(id))     memoryerror();
 		else if (string s;  pexprs(s))  globals[id] = s;
 		else if (int i = 0; pexpr(i))   globals[id] = i;
 		else    syntaxerror();
@@ -94,6 +94,7 @@ struct WBRuntime {
 		if (!accept("input"))  return false;
 		require("$identifier $eof");
 		auto id = tok.presult.at(0);
+		auto& s = memgets(id);
 		syntaxerror();
 		return true;
 	}
@@ -126,8 +127,11 @@ struct WBRuntime {
 
 	// -- Errors --
 	void syntaxerror() {
-		println();
-		println("[-syntax error on line " + to_string(lpos+1) + "-]");
+		println(), println("[-syntax error on line " + to_string(lpos+1) + "-]");
+		throw runtime_error(lines.back());
+	}
+	void memoryerror() {
+		println(), println("[-incorrect memory access on line " + to_string(lpos+1) + "-]");
 		throw runtime_error(lines.back());
 	}
 
@@ -150,19 +154,19 @@ struct WBRuntime {
 	
 	// -- Runtime Memory --
 	Mem_T& memget(const string& id) {
-		if (!globals.count(id))  syntaxerror();
+		if (!globals.count(id))  memoryerror();
 		return globals.at(id);
 	}
 	int& memgeti(const string& id) {
 		static int temp = 0;
 		auto& m = memget(id);
 		if (int* i = get_if<int>(&m))  return *i;
-		return syntaxerror(), temp;
+		return memoryerror(), temp;
 	}
 	string& memgets(const string& id) {
 		static string temp;
 		auto& m = memget(id);
 		if (string* s = get_if<string>(&m))  return *s;
-		return syntaxerror(), temp;
+		return memoryerror(), temp;
 	}
 };
