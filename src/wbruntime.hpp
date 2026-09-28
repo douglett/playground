@@ -7,23 +7,38 @@
 extern WBProject project;
 
 struct WBRuntime {
+	enum STATE_T { STATE_IDLE, STATE_RUNNING, STATE_END, STATE_ERROR, STATE_INPUT };
 	typedef variant<int, string> Mem_T;
 	vector<string> lines;
 	map<string, Mem_T> globals;
 	Tokenizer tok;
 	int fpos = 0, lpos = 0;
+	STATE_T state = STATE_IDLE;
 
-	int run() {
+	int start() {
 		// reset
 		lines = {}, globals = {}, tok.reset();
 		fpos = lpos = 0;
+		state = STATE_IDLE;
 		// indicate start
 		if (project.srcfiles.size() == 0)
 			return println("[no source files]"), 0;
 		printf("[program start]\n");
 		// run block
-		try { return pblock(); }
-		catch (runtime_error& e) { return 1; }
+		// try { return pcontinue(); }
+		// catch (runtime_error& e) { return 1; }
+		state = STATE_RUNNING;
+		return pcontinue();
+	}
+
+	int pcontinue() {
+		if (state != STATE_RUNNING)  return false;
+		try {
+			return pline();
+		} catch (runtime_error& e) {
+			state = STATE_ERROR;
+			return false;
+		}
 	}
 
 	// -- Parse Helpers --
@@ -32,26 +47,26 @@ struct WBRuntime {
 	int require(const string& rule) { if (!tok.require(rule)) syntaxerror(); return true; }
 
 	// -- Parse Statements --
-	int pblock() {
-		auto& lines = project.srcfiles[0].lines;
-		while (lpos >= 0 && lpos < (int)lines.size()) {
-			tok.reset(), tok.tokenizeline(lines[lpos]);
-			printf("L%02d: ", lpos+1), tok.show();
-			// println(format( "L{:02}: {}", lpos+1, tok.showstr(1) ));
-			// run statement
-			if      (accept("$eof")) ;
-			else if (pprint()) ;
-			else if (pdim()) ;
-			else if (plet()) ;
-			else if (pinput()) ;
-			else    syntaxerror();
-			// next
-			lpos++;
+	int pline() {
+		auto& lines = project.srcfiles.at(0).lines;
+		if (lpos >= (int)lines.size()) {
+			println(), println("[-program end-]");
+			return state = STATE_END, false;
 		}
-		
-		println();
-		println("[-program end-]");
-		return 0;
+		// parse line
+		tok.reset(), tok.tokenizeline(lines[lpos]);
+		printf("L%02d: ", lpos+1), tok.show();
+		// println(format( "L{:02}: {}", lpos+1, tok.showstr(1) ));
+		// run statement
+		if      (accept("$eof")) ;
+		else if (pprint()) ;
+		else if (pdim()) ;
+		else if (plet()) ;
+		else if (pinput()) ;
+		else    syntaxerror();
+		// next
+		lpos++;		
+		return true;
 	}
 
 	int pdim() {
@@ -96,6 +111,9 @@ struct WBRuntime {
 		auto id = tok.presult.at(0);
 		auto& s = memgets(id);
 		syntaxerror();
+
+		// https://www.raylib.com/examples/text/loader.html?name=text_input_box
+
 		return true;
 	}
 

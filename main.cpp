@@ -54,18 +54,20 @@ void mainloop() {
 	while (!gfx.shouldQuit()) {
 		if ((IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) && IsKeyPressed(KEY_ENTER))
 			gfx.screen.fullscreen();
-		else if (!running && IsKeyPressed(KEY_F5))
-			running = true,
-			runtime.run();
-		else if (running && IsKeyPressed(KEY_F6))
-			running = false;
-
-		// DrawTexture(gfx.qbfont.getselectedfont().texture, 50, 50, WHITE);
-
-		if (running)
-			paintrun();
-		else
+		
+		if (!running) {
+			if (IsKeyPressed(KEY_F5))
+				running = true,
+				runtime.start();
 			paintedit();
+		} else {
+			if (IsKeyPressed(KEY_F6))
+				running = false;
+			runtime.pcontinue();
+			paintrun();
+		}
+		
+		// DrawTexture(gfx.qbfont.getselectedfont().texture, 50, 50, WHITE);
 		gfx.flip();
 	}
 
