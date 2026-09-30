@@ -13,4 +13,5 @@ let txt = "blah"
 print txt
 
 ' let txt = 1
-' input txt
+input txt
+print "you wrote:" txt

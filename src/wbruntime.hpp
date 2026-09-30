@@ -14,6 +14,7 @@ struct WBRuntime {
 	Tokenizer tok;
 	int fpos = 0, lpos = 0;
 	STATE_T state = STATE_IDLE;
+	struct { string id, startln, input; } input;
 
 	int start() {
 		// reset
@@ -32,6 +33,7 @@ struct WBRuntime {
 	}
 
 	int pcontinue() {
+		if (state == STATE_INPUT)    return rinput(), true;
 		if (state != STATE_RUNNING)  return false;
 		try {
 			return pline();
@@ -108,13 +110,11 @@ struct WBRuntime {
 	int pinput() {
 		if (!accept("input"))  return false;
 		require("$identifier $eof");
-		auto id = tok.presult.at(0);
-		auto& s = memgets(id);
-		syntaxerror();
-
-		// https://www.raylib.com/examples/text/loader.html?name=text_input_box
-
-		return true;
+		input.id = tok.presult.at(0);
+		memgets(input.id);  // validate
+		state = STATE_INPUT;
+		print(), input.input = "", input.startln = lines.back();
+		return rinput(), true;
 	}
 
 	int pexpr(int& i) {
@@ -153,7 +153,7 @@ struct WBRuntime {
 		throw runtime_error(lines.back());
 	}
 
-	// -- Runtime Output --
+	// -- Runtime IO --
 	// void print(int i) { print(to_string(i)); }
 	void print(const Mem_T& m) {
 		if (const int* i = get_if<int>(&m))
@@ -168,6 +168,23 @@ struct WBRuntime {
 	void println(const string& str="") {
 		print(str);
 		lines.push_back("");
+	}
+	void rinput() {
+		// get keyboard input
+		for (int key = GetCharPressed(); key > 0; key = GetCharPressed())
+			if (key >= 32 && key <= 125)
+				input.input += (char)key;
+		// control characters
+		if (IsKeyPressed(KEY_BACKSPACE))
+			input.input.pop_back();
+		if (IsKeyPressed(KEY_ENTER)) {
+			memgets(input.id) = input.input;
+			lines.back() = input.startln + input.input;
+			println();
+			return state = STATE_RUNNING, void();
+		}
+		// show output while typing
+		lines.back() = input.startln + input.input + "_";
 	}
 	
 	// -- Runtime Memory --
