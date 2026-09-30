@@ -61,10 +61,12 @@ struct WBRuntime {
 		// println(format( "L{:02}: {}", lpos+1, tok.showstr(1) ));
 		// run statement
 		if      (accept("$eof")) ;
+		else if (accept("end $eof")) ;
 		else if (pprint()) ;
 		else if (pdim()) ;
 		else if (plet()) ;
 		else if (pinput()) ;
+		else if (pwhile()) ;
 		else    syntaxerror();
 		// next
 		lpos++;		
@@ -117,21 +119,31 @@ struct WBRuntime {
 		return rinput(), true;
 	}
 
+	int pwhile() {
+		if (!accept("while"))  return false;
+		int i = 0;
+		if (!pexpr(i))  syntaxerror();
+		require("$eof");
+		// if (i)
+		return true;
+	}
+
 	int pexpr(int& i) {
 		if      (accept("$number"))      i = stoi(tok.presult.at(0));
 		else if (accept("$identifier"))  i = memgeti(tok.presult.at(0));
 		else    return false;
 		// TODO: order-of-prescedence, brackets
-		while (accept("+") || accept("-") || accept("*") || accept("/")) {
-			auto op = tok.presult.at(0);
+		while (accept("+") || accept("-") || accept("*") || accept("/") || accept("< =")) {
+			auto op = tok.joinstr(tok.presult, "");
 			int n = 0;
 			if      (accept("$number"))      n = stoi(tok.presult.at(0));
 			else if (accept("$identifier"))  n = memgeti(tok.presult.at(0));
 			else    syntaxerror();
-			if      (op == "+")  i += n;
-			else if (op == "-")  i -= n;
-			else if (op == "*")  i *= n;
-			else if (op == "/")  i /= n;
+			if      (op == "+" )  i += n;
+			else if (op == "-" )  i -= n;
+			else if (op == "*" )  i *= n;
+			else if (op == "/" )  i /= n;
+			else if (op == "<=")  i = i <= n;
 			else    syntaxerror();
 		}
 		return true;

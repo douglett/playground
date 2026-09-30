@@ -12,6 +12,11 @@ dim txt = "hello world 2"
 let txt = "blah"
 print txt
 
-' let txt = 1
-input txt
-print "you wrote:" txt
+' input txt
+' print "you wrote:" txt
+
+let a = 0
+while a <= 5
+	let a = a + 1
+	print a
+end
