@@ -9,8 +9,11 @@ extern WBProject project;
 struct WBRuntime {
 	enum STATE_T { STATE_IDLE, STATE_RUNNING, STATE_END, STATE_ERROR, STATE_INPUT };
 	typedef variant<int, string> Mem_T;
+	struct ControlPoint { string type; int lpos; };
+
 	vector<string> lines;
 	map<string, Mem_T> globals;
+	vector<ControlPoint> ctrl;
 	Tokenizer tok;
 	int fpos = 0, lpos = 0;
 	STATE_T state = STATE_IDLE;
@@ -50,7 +53,7 @@ struct WBRuntime {
 
 	// -- Parse Statements --
 	int pline() {
-		auto& lines = project.srcfiles.at(0).lines;
+		auto& lines = project.srcfiles.at(fpos).lines;
 		if (lpos >= (int)lines.size()) {
 			println(), println("[-program end-]");
 			return state = STATE_END, false;
@@ -61,12 +64,12 @@ struct WBRuntime {
 		// println(format( "L{:02}: {}", lpos+1, tok.showstr(1) ));
 		// run statement
 		if      (accept("$eof")) ;
-		else if (accept("end $eof")) ;
 		else if (pprint()) ;
 		else if (pdim()) ;
 		else if (plet()) ;
 		else if (pinput()) ;
 		else if (pwhile()) ;
+		else if (pend()) return true;
 		else    syntaxerror();
 		// next
 		lpos++;		
@@ -124,7 +127,16 @@ struct WBRuntime {
 		int i = 0;
 		if (!pexpr(i))  syntaxerror();
 		require("$eof");
-		// if (i)
+		ctrlstart("while");
+		if (!i)
+			ctrljumpend("while");
+		return true;
+	}
+
+	int pend() {
+		if (!accept("end"))  return false;
+		require("$eof");
+		ctrlend();
 		return true;
 	}
 
@@ -164,6 +176,10 @@ struct WBRuntime {
 		println(), println("[-incorrect memory access on line " + to_string(lpos+1) + "-]");
 		throw runtime_error(lines.back());
 	}
+	void controlerror() {
+		println(), println("[-control structure error on line " + to_string(lpos+1) + "-]");
+		throw runtime_error(lines.back());
+	}
 
 	// -- Runtime IO --
 	// void print(int i) { print(to_string(i)); }
@@ -197,6 +213,30 @@ struct WBRuntime {
 		}
 		// show output while typing
 		lines.back() = input.startln + input.input + "_";
+	}
+
+	// -- Runtime Control Structures --
+	void ctrlstart(const string& type) {
+		if (ctrl.size() && ctrl.back().type == type && ctrl.back().lpos == lpos)  return;
+		ctrl.push_back({ type, lpos });
+	}
+	void ctrlend() {
+		if (!ctrl.size())
+			controlerror();
+		else if (ctrl.back().type == "while")
+			lpos = ctrl.back().lpos;
+		else
+			controlerror();
+	}
+	void ctrljumpend(const string& type) {
+		if (!ctrl.size() || ctrl.back().type != type)  controlerror();
+		auto& lines = project.srcfiles.at(fpos).lines;
+		while (lpos < (int)lines.size()) {
+			tok.reset(), tok.tokenizeline(lines[lpos]), lpos++;
+			if (accept("end $eof"))
+				return ctrl.pop_back(), void();
+		}
+		controlerror();
 	}
 	
 	// -- Runtime Memory --

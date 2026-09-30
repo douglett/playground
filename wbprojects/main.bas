@@ -15,7 +15,7 @@ print txt
 ' input txt
 ' print "you wrote:" txt
 
-let a = 0
+let a = 1
 while a <= 5
 	let a = a + 1
 	print a
