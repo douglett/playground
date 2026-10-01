@@ -49,7 +49,12 @@ struct QBFont {
 		}
 	}
 
-	void print(const string& str, int x, int y, Color col=WHITE) {
+	void print(string str, int x, int y, Color col=WHITE) {
+		// replace special characters
+		for (size_t i = 0; i < str.length(); i++)
+			if      (str[i] == '\t')  str.replace(i, i+1, "    ");
+			else if (str[i] == '\n')  str.erase(i);
+		// print letters
 		const Font& f = font();
 		Rectangle src = { 0, 0, float(f.charw), float(f.charh) };
 		Vector2   dst = { 0, float(y) };
