@@ -10,6 +10,7 @@ struct WBRuntime {
 	enum STATE_T { STATE_IDLE, STATE_RUNNING, STATE_END, STATE_ERROR, STATE_INPUT };
 	typedef variant<int, string> Mem_T;
 	struct ControlPoint { string type; int lpos; };
+	const static inline string STR_DEFAULT;
 
 	vector<string> lines;
 	map<string, Mem_T> globals;
@@ -26,11 +27,12 @@ struct WBRuntime {
 		state = STATE_IDLE;
 		// indicate start
 		if (project.srcfiles.size() == 0)
-			return println("[no source files]"), 0;
+			return println("[-no source files-]"), false;
+		// preparse
+		if (!preparse())
+			return state = STATE_ERROR, false;
+		// run from start
 		printf("[program start]\n");
-		// run block
-		// try { return pcontinue(); }
-		// catch (runtime_error& e) { return 1; }
 		state = STATE_RUNNING;
 		return pcontinue();
 	}
@@ -50,6 +52,40 @@ struct WBRuntime {
 	int peek   (const string& rule) { return tok.peek(rule); }
 	int accept (const string& rule) { return tok.accept(rule); }
 	int require(const string& rule) { if (!tok.require(rule)) syntaxerror(); return true; }
+	const string& cline() { return endline() ? STR_DEFAULT : project.srcfiles.at(fpos).lines.at(lpos); }
+	int endline()      { return fpos < 0 || lpos < 0 || fpos >= (int)project.srcfiles.size() || lpos >= (int)project.srcfiles[fpos].lines.size(); }
+	int tokenizenext() { return tok.reset(), tok.tokenizeline(cline()); }
+
+	int preparse() {
+		try {
+			lpos = 0;
+			while (!endline()) {
+				tokenizenext();
+				if      (peek("while"))  preparseblock("while");
+				else if (peek("end"))    throw runtime_error("dangling end");
+				lpos++;
+			}
+		} catch(runtime_error& e) {
+			println("[-preparse error line " + to_string(lpos) + "-]");
+			println(e.what());
+			return false;
+		}
+		printf("preparse OK!\n");
+		lpos = 0;
+		return true;
+	}
+
+	int preparseblock(const string& type) {
+		printf("block_start: %s %d\n", type.c_str(), lpos);
+		lpos++;
+		while (!endline()) {
+			tokenizenext();
+			if      (peek("while"))  preparseblock("while");
+			else if (peek("end"))    return printf("block_end: %s %d\n", type.c_str(), lpos), lpos++, true;
+			lpos++;
+		}
+		throw runtime_error("unterminated block");
+	}
 
 	// -- Parse Statements --
 	int pline() {
