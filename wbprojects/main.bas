@@ -17,6 +17,6 @@ print txt
 
 let a = 1
 while a <= 5
-	let a = a + 1
 	print a
+	let a = a + 1
 end

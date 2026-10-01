@@ -9,7 +9,7 @@ extern WBProject project;
 struct WBRuntime {
 	enum STATE_T { STATE_IDLE, STATE_RUNNING, STATE_END, STATE_ERROR, STATE_INPUT };
 	typedef variant<int, string> Mem_T;
-	struct ControlPoint { string type; int lpos; };
+	struct ControlPoint { string type; int lpos, epos; };
 	const static inline string STR_DEFAULT;
 
 	vector<string> lines;
@@ -70,18 +70,22 @@ struct WBRuntime {
 			println(e.what());
 			return false;
 		}
-		printf("preparse OK!\n");
+		// printf("preparse OK!\n");
 		lpos = 0;
 		return true;
 	}
 
 	int preparseblock(const string& type) {
-		printf("block_start: %s %d\n", type.c_str(), lpos);
-		lpos++;
+		// printf("block_start: %s %d\n", type.c_str(), lpos);
+		int start = lpos++;
 		while (!endline()) {
 			tokenizenext();
 			if      (peek("while"))  preparseblock("while");
-			else if (peek("end"))    return printf("block_end: %s %d\n", type.c_str(), lpos), lpos++, true;
+			else if (peek("end")) {
+				// printf("block_end: %s %d\n", type.c_str(), lpos);
+				ctrl.push_back({ type, start, lpos });
+				return lpos++, true;
+			}
 			lpos++;
 		}
 		throw runtime_error("unterminated block");
@@ -163,9 +167,7 @@ struct WBRuntime {
 		int i = 0;
 		if (!pexpr(i))  syntaxerror();
 		require("$eof");
-		ctrlstart("while");
-		if (!i)
-			ctrljumpend("while");
+		if (!i)  ctrljne("while");
 		return true;
 	}
 
@@ -252,26 +254,17 @@ struct WBRuntime {
 	}
 
 	// -- Runtime Control Structures --
-	void ctrlstart(const string& type) {
-		if (ctrl.size() && ctrl.back().type == type && ctrl.back().lpos == lpos)  return;
-		ctrl.push_back({ type, lpos });
+	void ctrljne(const string& type) {
+		for (const auto& c : ctrl)
+			if (c.lpos == lpos)
+				return lpos = c.epos, void();
+		controlerror();
 	}
 	void ctrlend() {
-		if (!ctrl.size())
-			controlerror();
-		else if (ctrl.back().type == "while")
-			lpos = ctrl.back().lpos;
-		else
-			controlerror();
-	}
-	void ctrljumpend(const string& type) {
-		if (!ctrl.size() || ctrl.back().type != type)  controlerror();
-		auto& lines = project.srcfiles.at(fpos).lines;
-		while (lpos < (int)lines.size()) {
-			tok.reset(), tok.tokenizeline(lines[lpos]), lpos++;
-			if (accept("end $eof"))
-				return ctrl.pop_back(), void();
-		}
+		for (const auto& c : ctrl)
+			if (c.epos == lpos) {
+				if (c.type == "while")  return lpos = c.lpos, void();
+			}
 		controlerror();
 	}
 	
