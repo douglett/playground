@@ -29,7 +29,7 @@ void paintedit() {
 	if (project.srcfiles.size()) {
 		auto& lines = project.srcfiles[0].lines;
 		for (size_t i = 0; i < lines.size(); i++) {
-			s = (i < 10 ? " " : "") + to_string(i+1);
+			s = (i+1 < 10 ? " " : "") + to_string(i+1);
 			gfx.print(s, (lpanelw+1)*f.charw, (i+1)*f.charh, BLUE);
 			gfx.print(lines[i].substr(0, rpanelw-marginw), (lpanelw+1+marginw)*f.charw, (i+1)*f.charh);
 		}

@@ -5,16 +5,22 @@ extern WBParser wbparser;
 struct WBRuntime2 : WBParserBase {
 	vector<string> history;
 	map<string, int> memory;
+	int lpos = 0;
 
 	int start() {
-		memory = {};
+		lpos = 0, memory = {};
 		if (wbparser.errormsg.length())
 			return logerr(wbparser.errormsg);
 		if (!wbparser.functions.count("main"))
 			return logerr("no function found: main");
-		printf("running function 'main'...\n");
-		rfunc(wbparser.functions.at("main"));
-		return true;
+		try {
+			printf("running function 'main'...\n");
+			rfunc(wbparser.functions.at("main"));
+			lognl(), log("[-program end-]");
+			return true;
+		} catch(runtime_error& e) {
+			return false;
+		}
 	}
 
 	// -- Logging --
@@ -35,52 +41,65 @@ struct WBRuntime2 : WBParserBase {
 	}
 
 	// -- Errors --
-	int runtimeerror(int lpos) {
+	int runtimeerror() {
 		logerr("runtime error, line " + to_string(lpos));
 		throw runtime_error("syntaxerror");
 	}
-	int memoryerror(int lpos) {
+	int memoryerror() {
 		logerr("memory error, line " + to_string(lpos));
 		throw runtime_error("memoryerror");
 	}
 
 	// -- Run --
 	void rfunc(const wfunc& fn) {
+		lpos = fn.lpos;
 		for (auto& stmt : fn.block)
 			if      (auto* st = get_if<wprint>(&stmt))  rprint(*st);
 			else if (auto* st = get_if<wdim>(&stmt))    rdim(*st);
 			else if (auto* st = get_if<wlet>(&stmt))    rlet(*st);
-			else    runtimeerror(fn.lpos); // warning: this will be wrong, but shouldn't be run
+			else    runtimeerror();  // warning: this will be wrong, but shouldn't be run
 	}
 
 	void rprint(const wprint& pr) {
+		lpos = pr.lpos;
 		for (auto& arg : pr.list)
 			if      (auto* s = get_if<string>(&arg))  log(*s);
 			else if (auto* i = get_if<int>(&arg))     log(*i);
-			else if (auto* v = get_if<wvar>(&arg))    log(getmemi(v->id, pr.lpos));
-			else    runtimeerror(pr.lpos);
+			else if (auto* v = get_if<wvar>(&arg))    log(getmemi(v->id));
+			else    runtimeerror();
 		lognl();
 	}
 
 	void rdim(const wdim& dim) {
-		if (memory.count(dim.id))  memoryerror(dim.lpos);
+		lpos = dim.lpos;
+		if (memory.count(dim.id))  memoryerror();
 		memory[dim.id] = dim.val;
 	}
-
+	
 	void rlet(const wlet& let) {
-		if (!memory.count(let.id))  memoryerror(let.lpos);
-		memory.at(let.id) = rexpri(let.ex, let.lpos);
+		lpos = let.lpos;
+		if (!memory.count(let.id))  memoryerror();
+		memory.at(let.id) = rexpri(let.ex);
 	}
 
-	int rexpri(const wexpr& ex, int lpos) {
-		if (ex.op == "+")  return get<int>(ex.a) + get<int>(ex.b);
-		if (ex.op == "-")  return get<int>(ex.a) + get<int>(ex.b);
-		return runtimeerror(lpos);
+	int rexpri(const wexpr& ex) {
+		// if (ex.op == "+")  return get<int>(ex.a) + get<int>(ex.b);
+		// if (ex.op == "-")  return get<int>(ex.a) + get<int>(ex.b);
+		if      (ex.op == "")   return atomi(ex.a);
+		else if (ex.op == "+")  return atomi(ex.a) + atomi(ex.b);
+		else if (ex.op == "-")  return atomi(ex.a) - atomi(ex.b);
+		return runtimeerror();
+	}
+
+	int atomi(const watom& a) {
+		if      (auto* v = get_if<int>(&a))   return *v;
+		else if (auto* v = get_if<wvar>(&a))  return getmemi(v->id);
+		return runtimeerror();
 	}
 
 	// -- Memory --
-	int& getmemi(const string& id, int lpos=-1) {
-		if (!memory.count(id))  memoryerror(lpos);
+	int& getmemi(const string& id) {
+		if (!memory.count(id))  memoryerror();
 		return memory[id];
 	}
 };
