@@ -9,13 +9,16 @@ extern WBProject project;
 struct WBParserBase {
 	struct wvar     { string id; };
 	using  watom    = variant<int, string, wvar>;
-	struct wexpr    { watom a, b; string op; };
+	struct wexprop;
+	using  wexpr    = variant<watom, wexprop>;
+	struct wexprop  { string op; vector<wexpr> ab; };
 	struct wprint   { int lpos; vector<watom> list; };
 	struct wdim     { int lpos; string id; wexpr ex; };
 	struct wlet     { int lpos; string id; wexpr ex; };
 	using  wstmt    = variant<wprint, wdim, wlet>;
 	using  wblock   = vector<wstmt>;
 	struct wfunc    { int lpos; string name; wblock block; };
+
 	
 	// int log    (const string& err)  { return printf("%s\n", err.c_str()), true; }
 	// int logerr (const string& err)  { return errormsg = err, fprintf(stderr, "%s\n", err.c_str()), false; }
@@ -125,12 +128,19 @@ struct WBParser : WBParserBase {
 		return pxadd(ex);
 	}
 	int pxadd(wexpr& ex) {
-		if (!pxatom(ex.a))  return false;
+		watom a;
+		if (!pxatom(a))  return false;
+		ex = a;
 		if (accept("+") || accept("-")) {
-			ex.op = tok.presult.at(0);
-			pxatom(ex.b) || syntaxerror();
+			ex = wexprop{ tok.presult.at(0), {a} };
+			wexpr b;
+			pxadd(b) || syntaxerror();
+			get<wexprop>(ex).ab.push_back(b);
 		}
 		return true;
+	}
+	int pxmul(wexpr& ex) {
+		return false;
 	}
 	int pxatom(watom& a) {
 		if      (accept("$number"))      return a = stoi(tok.presult.at(0)), true;

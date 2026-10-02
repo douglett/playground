@@ -8,6 +8,6 @@ function main()
 	let a = 2 + 2
 	print a
 
-	dim b = a+a
+	dim b = a + a - 2
 	print b
 end
