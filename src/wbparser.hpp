@@ -1,14 +1,20 @@
 #pragma once
 #include "wbproject.hpp"
-// #include <map>
+#include <map>
+#include <variant>
 // #include <format>
-// #include <variant>
 
 extern WBProject project;
 
 struct WBParser {
+	struct wprint   { int lpos; string s; };
+	using  wstmt    = variant<wprint>;
+	using  wblock   = vector<wstmt>;
+	struct wfunc    { int lpos; string name; wblock block; };
+
 	// vector<string> logout;
 	Tokenizer tok;
+	map<string, wfunc> functions;
 
 	int parseall() {
 		if (project.srcfiles.size() == 0)
@@ -32,7 +38,7 @@ struct WBParser {
 		try {
 			while (!tok.eof())
 				if      (accept("$eol")) ;
-				else if (peek("function"))  pfunc();
+				else if (pfunc()) ;
 				else    syntaxerror();
 		} catch(runtime_error& e) {
 			return false;
@@ -43,13 +49,27 @@ struct WBParser {
 	}
 
 	int pfunc() {
-		require("function $identifier ( ) $eol");
-		string id = tok.presult.at(1);
+		if (!accept("function"))  return false;
+		int lpos = tok.linepos();
+		require("$identifier ( ) $eol");
+		string id = tok.presult.at(0);
+		if (functions.count(id))  syntaxerror();
+		auto& func = functions[id] = { lpos, id };
+		// parse statements
 		while (!tok.eof())
 			if      (accept("$eol")) ;
 			else if (accept("end $eol"))  return true;
-			else     syntaxerror();
+			else if (pprint(func.block)) ;
+			else    syntaxerror();
 		return syntaxerror();
+	}
+
+	int pprint(wblock& block) {
+		if (!accept("print"))  return false;
+		int lpos = tok.linepos();
+		require("$strlit $eol");
+		block.push_back(wprint{ lpos, tok.stripliteral(tok.presult.at(0)) });
+		return true;
 	}
 
 	// -- Errors --
