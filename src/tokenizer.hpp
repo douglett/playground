@@ -106,7 +106,10 @@ struct Tokenizer {
 		return pos < 0 || pos >= (int)tok.size();
 	}
 	int linepos() {
-		return eof() ? TOK_EOF.lpos : tok[pos].lpos;
+		// return eof() ? TOK_EOF.lpos : tok[pos].lpos;
+		if      (pos < 0 || tok.size() == 0)  return 0;
+		else if (pos >= (int)tok.size())      return tok.back().lpos;
+		else    return tok[pos].lpos;
 	}
 	const string& peek() {
 		return eof() ? TOK_EOF.str : tok[pos].str;
