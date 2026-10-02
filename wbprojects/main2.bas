@@ -1,16 +1,20 @@
 function main()
-	print "hello world", 123
-	print "i'm farting"
+	' print "hello world", 123
+	' print "i'm farting"
 
-	dim a = 10
-	print a
+	' dim a = 10
+	' print a
 
-	let a = 2 + 2
-	print a
+	' let a = 2 + 2
+	' print a
 
-	dim b = a + a - 2
-	print b
+	' dim b = a + a - 2
+	' print b
 
-	let b = 2+10*10
-	print b
+	' let b = 2+10*10
+	' print b
+
+	dim c = "test"
+	dim d = c
+	print c, d
 end

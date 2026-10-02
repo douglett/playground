@@ -3,8 +3,10 @@
 extern WBParser wbparser;
 
 struct WBRuntime2 : WBParserBase {
+	using Mem_T = variant<int, string>;
+
 	vector<string> history;
-	map<string, int> memory;
+	map<string, Mem_T> memory;
 	int lpos = 0;
 
 	int start() {
@@ -25,6 +27,10 @@ struct WBRuntime2 : WBParserBase {
 
 	// -- Logging --
 	void log(int i) { log(to_string(i)); }
+	// void log(const Mem_T& v) {
+	// 	if      (auto* vv = get_if<int>(&v))     log(to_string(*vv));
+	// 	else if (auto* vv = get_if<string>(&v))  log(*vv);
+	// }
 	void log(const string& msg) {
 		if (!history.size())  history.push_back("");
 		history.back() += msg + " ";
@@ -65,7 +71,11 @@ struct WBRuntime2 : WBParserBase {
 		for (auto& arg : pr.list)
 			if      (auto* s = get_if<string>(&arg))  log(*s);
 			else if (auto* i = get_if<int>(&arg))     log(*i);
-			else if (auto* v = get_if<wvar>(&arg))    log(getmemi(v->id));
+			else if (auto* v = get_if<wvar>(&arg)) {
+				auto& mem = getmem(v->id);
+				if      (auto* i = get_if<int>(&mem))     log(*i);
+				else if (auto* s = get_if<string>(&mem))  log(*s);
+			}
 			else    runtimeerror();
 		lognl();
 	}
@@ -73,13 +83,21 @@ struct WBRuntime2 : WBParserBase {
 	void rdim(const wdim& dim) {
 		lpos = dim.lpos;
 		if (memory.count(dim.id))  memoryerror();
-		memory[dim.id] = rexpri(dim.ex);
+		memory[dim.id] = rexpr(dim.ex);
 	}
 	
 	void rlet(const wlet& let) {
 		lpos = let.lpos;
 		if (!memory.count(let.id))  memoryerror();
-		memory.at(let.id) = rexpri(let.ex);
+		memory.at(let.id) = rexpr(let.ex);
+	}
+
+	Mem_T rexpr(const wexpr& ex) {
+		if (auto* a = get_if<watom>(&ex)) {
+			if      (auto* v = get_if<string>(a))  return *v;
+			else if (auto* v = get_if<wvar>(a))    return getmem(v->id);
+		}
+		return rexpri(ex);
 	}
 
 	int rexpri(const wexpr& ex) {
@@ -103,8 +121,13 @@ struct WBRuntime2 : WBParserBase {
 	}
 
 	// -- Memory --
-	int& getmemi(const string& id) {
+	Mem_T& getmem(const string& id) {
 		if (!memory.count(id))  memoryerror();
 		return memory[id];
+	}
+	int& getmemi(const string& id) {
+		int* i = get_if<int>(&getmem(id));
+		if (!i)  memoryerror();
+		return *i;
 	}
 };

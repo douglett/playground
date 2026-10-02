@@ -125,6 +125,12 @@ struct WBParser : WBParserBase {
 	}
 
 	int pexpr(wexpr& ex) {
+		if (accept("$strlit"))
+			return ex = tok.stripliteral(tok.presult.at(0)), true;
+		return pexpri(ex);
+	}
+
+	int pexpri(wexpr& ex) {
 		return pxadd(ex);
 	}
 	int pxadd(wexpr& ex) {
@@ -133,7 +139,7 @@ struct WBParser : WBParserBase {
 		if (accept("+") || accept("-")) {
 			wexpr a = ex, b;
 			ex = wexprop{ tok.presult.at(0), {a} };
-			pexpr(b) || syntaxerror();
+			pexpri(b) || syntaxerror();
 			get<wexprop>(ex).ab.push_back(b);
 		}
 		return true;
@@ -146,7 +152,7 @@ struct WBParser : WBParserBase {
 		if (accept("*") || accept("/")) {
 			ex = wexprop{ tok.presult.at(0), {a} };
 			wexpr b;
-			pexpr(b) || syntaxerror();
+			pexpri(b) || syntaxerror();
 			get<wexprop>(ex).ab.push_back(b);
 		}
 		return true;
