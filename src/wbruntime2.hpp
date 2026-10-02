@@ -59,10 +59,21 @@ struct WBRuntime2 : WBParserBase {
 	// -- Run --
 	void rfunc(const wfunc& fn) {
 		lpos = fn.lpos;
-		for (auto& stmt : fn.block)
+		// for (auto& stmt : fn.block)
+		// 	if      (auto* st = get_if<wprint>(&stmt))  rprint(*st);
+		// 	else if (auto* st = get_if<wdim>(&stmt))    rdim(*st);
+		// 	else if (auto* st = get_if<wlet>(&stmt))    rlet(*st);
+		// 	else if (auto* st = get_if<wwhile>(&stmt))  rwhile(*st);
+		// 	else    runtimeerror();  // warning: this will be wrong, but shouldn't be run
+		rblock(fn.block);
+	}
+
+	void rblock(const wblock& block) {
+		for (auto& stmt : block)
 			if      (auto* st = get_if<wprint>(&stmt))  rprint(*st);
 			else if (auto* st = get_if<wdim>(&stmt))    rdim(*st);
 			else if (auto* st = get_if<wlet>(&stmt))    rlet(*st);
+			else if (auto* st = get_if<wwhile>(&stmt))  rwhile(*st);
 			else    runtimeerror();  // warning: this will be wrong, but shouldn't be run
 	}
 
@@ -92,6 +103,13 @@ struct WBRuntime2 : WBParserBase {
 		memory.at(let.id) = rexpr(let.ex);
 	}
 
+	void rwhile(const wwhile& wwl) {
+		lpos = wwl.lpos;
+		while (rexpri(wwl.ex))
+			rblock(wwl.block);
+	}
+
+	// -- Expressions --
 	Mem_T rexpr(const wexpr& ex) {
 		if (auto* a = get_if<watom>(&ex)) {
 			if      (auto* v = get_if<string>(a))  return *v;
@@ -106,10 +124,14 @@ struct WBRuntime2 : WBParserBase {
 		if (auto* op = get_if<wexprop>(&ex)) {
 			int a = rexpri( op->ab.at(0) ),
 				b = rexpri( op->ab.at(1) );
-			if      (op->op == "+")  return a + b;
-			else if (op->op == "-")  return a - b;
-			else if (op->op == "*")  return a * b;
-			else if (op->op == "/")  return a / b;
+			// basic maths
+			if      (op->op == "+" )  return a +  b;
+			else if (op->op == "-" )  return a -  b;
+			else if (op->op == "*" )  return a *  b;
+			else if (op->op == "/" )  return a /  b;
+			// comparisons
+			else if (op->op == "<" )  return a <  b;
+			else if (op->op == "<=")  return a <= b;
 		}
 		return runtimeerror();
 	}

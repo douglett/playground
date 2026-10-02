@@ -7,16 +7,18 @@
 extern WBProject project;
 
 struct WBParserBase {
+	struct wexprop;
+	struct wwhile;
 	struct wvar     { string id; };
 	using  watom    = variant<int, string, wvar>;
-	struct wexprop;
 	using  wexpr    = variant<watom, wexprop>;
 	struct wexprop  { string op; vector<wexpr> ab; };
 	struct wprint   { int lpos; vector<watom> list; };
 	struct wdim     { int lpos; string id; wexpr ex; };
 	struct wlet     { int lpos; string id; wexpr ex; };
-	using  wstmt    = variant<wprint, wdim, wlet>;
+	using  wstmt    = variant<wprint, wdim, wlet, wwhile>;
 	using  wblock   = vector<wstmt>;
+	struct wwhile   { int lpos; wexpr ex; wblock block; };
 	struct wfunc    { int lpos; string name; wblock block; };
 
 	
@@ -69,13 +71,26 @@ struct WBParser : WBParserBase {
 		if (functions.count(id))  syntaxerror();
 		auto& func = functions[id] = { lpos, id };
 		// parse statements
+		// while (!tok.eof())
+		// 	if      (accept("$eol")) ;
+		// 	else if (accept("end $eol"))  return true;
+		// 	else if (pprint(func.block)) ;
+		// 	else if (pdim(func.block)) ;
+		// 	else if (plet(func.block)) ;
+		// 	else    syntaxerror();
+		return pblock(func.block);
+	}
+
+	int pblock(wblock& block) {
+		// parse statements
 		while (!tok.eof())
 			if      (accept("$eol")) ;
 			else if (accept("end $eol"))  return true;
-			else if (pprint(func.block)) ;
-			else if (pdim(func.block)) ;
-			else if (plet(func.block)) ;
-			else    syntaxerror();
+			else if (pprint(block)) ;
+			else if (pdim(block)) ;
+			else if (plet(block)) ;
+			else if (pwhile(block)) ;
+			else    break;
 		return syntaxerror();
 	}
 
@@ -124,14 +139,38 @@ struct WBParser : WBParserBase {
 		return true;
 	}
 
+	int pwhile(wblock& block) {
+		if (!accept("while"))  return false;
+		int lpos = tok.linepos();
+		block.push_back(wwhile{ lpos });
+		auto& wwl = get<wwhile>(block.back());
+		// while expression
+		pexpri(wwl.ex) || syntaxerror();
+		require("$eol");
+		pblock(wwl.block);
+		return true;
+	}
+
+	// -- Expressions --
 	int pexpr(wexpr& ex) {
+		// string expressions
 		if (accept("$strlit"))
 			return ex = tok.stripliteral(tok.presult.at(0)), true;
+		// int expressions
 		return pexpri(ex);
 	}
 
+	// int expressions
 	int pexpri(wexpr& ex) {
-		return pxadd(ex);
+		return pxcompare(ex);
+	}
+	int pxcompare(wexpr& ex) {
+		if (!pxadd(ex))  return false;
+		if (accept("< =") || accept("<")) {
+			auto& ex2 = pxconvertprop(ex);
+			pexpri(ex2.ab.at(1)) || syntaxerror();
+		}
+		return true;
 	}
 	int pxadd(wexpr& ex) {
 		// TODO: messy
@@ -162,6 +201,10 @@ struct WBParser : WBParserBase {
 		else if (accept("$strlit"))      return a = tok.stripliteral(tok.presult.at(0)), true;
 		else if (accept("$identifier"))  return a = wvar{ tok.presult.at(0) }, true;
 		return false;
+	}
+	wexprop& pxconvertprop(wexpr& ex) {
+		ex = wexprop{ tok.joinstr(tok.presult, ""), { ex, 0 } };
+		return get<wexprop>(ex);
 	}
 
 	// -- Errors --
