@@ -69,7 +69,13 @@ struct WBRuntime2 : WBParserBase {
 
 	void rlet(const wlet& let) {
 		if (!memory.count(let.id))  memoryerror(let.lpos);
-		memory.at(let.id) = let.val;
+		memory.at(let.id) = rexpri(let.ex, let.lpos);
+	}
+
+	int rexpri(const wexpr& ex, int lpos) {
+		if (ex.op == "+")  return get<int>(ex.a) + get<int>(ex.b);
+		if (ex.op == "-")  return get<int>(ex.a) + get<int>(ex.b);
+		return runtimeerror(lpos);
 	}
 
 	// -- Memory --

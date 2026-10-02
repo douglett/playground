@@ -8,10 +8,11 @@ extern WBProject project;
 
 struct WBParserBase {
 	struct wvar     { string id; };
-	using  watom    = variant<string, int, wvar>;
+	using  watom    = variant<int, string, wvar>;
+	struct wexpr    { watom a, b; string op; };
 	struct wprint   { int lpos; vector<watom> list; };
 	struct wdim     { int lpos; string id; int val; };
-	struct wlet     { int lpos; string id; int val; };
+	struct wlet     { int lpos; string id; wexpr ex; };
 	using  wstmt    = variant<wprint, wdim, wlet>;
 	using  wblock   = vector<wstmt>;
 	struct wfunc    { int lpos; string name; wblock block; };
@@ -35,7 +36,7 @@ struct WBParser : WBParserBase {
 	int logerr (const string& err)  { return errormsg = err, fprintf(stderr, "parser_error: %s\n", err.c_str()), false; }
 	int peek   (const string& rule) { return tok.peek(rule); }
 	int accept (const string& rule) { return tok.accept(rule); }
-	int require(const string& rule) { return tok.accept(rule) ? true : syntaxerror(); }
+	int require(const string& rule) { return tok.require(rule) ? true : syntaxerror(); }
 
 	// -- Parsing Structures --
 	int pfile(const SourceFile& src) {
@@ -112,10 +113,29 @@ struct WBParser : WBParserBase {
 		block.push_back(wlet{ lpos });
 		auto& let = get<wlet>(block.back());
 		// let expression
-		require("$identifier = $number $eol");
+		require("$identifier =");
 		let.id  = tok.presult.at(0);
-		let.val = stoi(tok.presult.at(2));
+		pexpr(let.ex) || syntaxerror();
+		require("$eol");
 		return true;
+	}
+
+	int pexpr(wexpr& ex) {
+		return pxadd(ex);
+	}
+	int pxadd(wexpr& ex) {
+		if (!pxatom(ex.a))  return false;
+		if (accept("+") || accept("-")) {
+			ex.op = tok.presult.at(0);
+			pxatom(ex.b) || syntaxerror();
+		}
+		return true;
+	}
+	int pxatom(watom& a) {
+		if      (accept("$number"))      return a = stoi(tok.presult.at(0)), true;
+		else if (accept("$strlit"))      return a = tok.stripliteral(tok.presult.at(0)), true;
+		else if (accept("$identifier"))  return a = wvar{ tok.presult.at(0) }, true;
+		return false;
 	}
 
 	// -- Errors --
