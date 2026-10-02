@@ -6,13 +6,17 @@
 
 extern WBProject project;
 
-struct WBParser {
+struct WBParserBase {
 	struct wprint   { int lpos; string s; };
 	using  wstmt    = variant<wprint>;
 	using  wblock   = vector<wstmt>;
 	struct wfunc    { int lpos; string name; wblock block; };
+	
+	int log    (const string& err)  { return printf("[-%s-]\n", err.c_str()), true; }
+	int logerr (const string& err)  { return fprintf(stderr, "[-%s-]\n", err.c_str()), false; }
+};
 
-	// vector<string> logout;
+struct WBParser : WBParserBase {
 	Tokenizer tok;
 	map<string, wfunc> functions;
 
@@ -22,8 +26,8 @@ struct WBParser {
 		return pfile(project.srcfiles.at(0));
 	}
 
-	int log    (const string& err)  { return printf("[-%s-]\n", err.c_str()), true; }
-	int logerr (const string& err)  { return fprintf(stderr, "[-%s-]\n", err.c_str()), false; }
+	// int log    (const string& err)  { return printf("[-%s-]\n", err.c_str()), true; }
+	// int logerr (const string& err)  { return fprintf(stderr, "[-%s-]\n", err.c_str()), false; }
 	int peek   (const string& rule) { return tok.peek(rule); }
 	int accept (const string& rule) { return tok.accept(rule); }
 	int require(const string& rule) { return tok.accept(rule) ? true : syntaxerror(); }

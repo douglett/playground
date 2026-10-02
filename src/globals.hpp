@@ -6,6 +6,7 @@
 #include "wbproject.hpp"
 #include "wbruntime.hpp"
 #include "wbparser.hpp"
+#include "wbruntime2.hpp"
 using namespace std;
 
 extern GFX gfx;

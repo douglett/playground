@@ -7,6 +7,7 @@ GFX gfx;
 WBProject project;
 // WBRuntime runtime;
 WBParser wbparser;
+WBRuntime2 runtime2;
 
 void paintedit() {
 	auto& f = gfx.font.font();
@@ -84,4 +85,5 @@ int main() {
 	
 	// mainloop();
 	wbparser.parseall();
+	runtime2.start();
 }
