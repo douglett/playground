@@ -47,8 +47,9 @@ struct WBRuntime2 : WBParserBase {
 	// -- Run --
 	void rfunc(const wfunc& fn) {
 		for (auto& stmt : fn.block)
-			if      (const wprint* pr  = get_if<wprint>(&stmt))  rprint(*pr);
-			else if (const wdim*   dim = get_if<wdim>(&stmt))    rdim(*dim);
+			if      (auto* st = get_if<wprint>(&stmt))  rprint(*st);
+			else if (auto* st = get_if<wdim>(&stmt))    rdim(*st);
+			else if (auto* st = get_if<wlet>(&stmt))    rlet(*st);
 			else    runtimeerror(fn.lpos); // warning: this will be wrong, but shouldn't be run
 	}
 
@@ -64,6 +65,11 @@ struct WBRuntime2 : WBParserBase {
 	void rdim(const wdim& dim) {
 		if (memory.count(dim.id))  memoryerror(dim.lpos);
 		memory[dim.id] = dim.val;
+	}
+
+	void rlet(const wlet& let) {
+		if (!memory.count(let.id))  memoryerror(let.lpos);
+		memory.at(let.id) = let.val;
 	}
 
 	// -- Memory --

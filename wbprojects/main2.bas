@@ -4,4 +4,7 @@ function main()
 
 	dim a = 10
 	print a
+
+	let a = 2
+	print a
 end
