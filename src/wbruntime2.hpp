@@ -4,14 +4,17 @@ extern WBParser wbparser;
 
 struct WBRuntime2 : WBParserBase {
 	vector<string> history;
+	map<string, int> memory;
 
 	int start() {
+		memory = {};
 		if (wbparser.errormsg.length())
 			return logerr(wbparser.errormsg);
 		if (!wbparser.functions.count("main"))
 			return logerr("no function found: main");
 		printf("running function 'main'...\n");
-		return rfunc(wbparser.functions.at("main"));
+		rfunc(wbparser.functions.at("main"));
+		return true;
 	}
 
 	// -- Logging --
@@ -36,20 +39,36 @@ struct WBRuntime2 : WBParserBase {
 		logerr("runtime error, line " + to_string(lpos));
 		throw runtime_error("syntaxerror");
 	}
-
-	// -- Run --
-	int rfunc(const wfunc& fn) {
-		for (auto& stmt : fn.block)
-			if (const wprint* pr = get_if<wprint>(&stmt))  rprint(*pr);
-		return true;
+	int memoryerror(int lpos) {
+		logerr("memory error, line " + to_string(lpos));
+		throw runtime_error("memoryerror");
 	}
 
-	int rprint(const wprint& pr) {
-		for (auto& v : pr.list)
-			if      (auto* s = get_if<string>(&v))  log(*s);
-			else if (auto* i = get_if<int>(&v))     log(*i);
+	// -- Run --
+	void rfunc(const wfunc& fn) {
+		for (auto& stmt : fn.block)
+			if      (const wprint* pr  = get_if<wprint>(&stmt))  rprint(*pr);
+			else if (const wdim*   dim = get_if<wdim>(&stmt))    rdim(*dim);
+			else    runtimeerror(fn.lpos); // warning: this will be wrong, but shouldn't be run
+	}
+
+	void rprint(const wprint& pr) {
+		for (auto& arg : pr.list)
+			if      (auto* s = get_if<string>(&arg))  log(*s);
+			else if (auto* i = get_if<int>(&arg))     log(*i);
+			else if (auto* v = get_if<wvar>(&arg))    log(getmemi(v->id, pr.lpos));
 			else    runtimeerror(pr.lpos);
 		lognl();
-		return true;
+	}
+
+	void rdim(const wdim& dim) {
+		if (memory.count(dim.id))  memoryerror(dim.lpos);
+		memory[dim.id] = dim.val;
+	}
+
+	// -- Memory --
+	int& getmemi(const string& id, int lpos=-1) {
+		if (!memory.count(id))  memoryerror(lpos);
+		return memory[id];
 	}
 };

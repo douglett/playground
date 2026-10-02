@@ -7,9 +7,11 @@
 extern WBProject project;
 
 struct WBParserBase {
-	using  watom    = variant<string, int>;
+	struct wvar     { string id; };
+	using  watom    = variant<string, int, wvar>;
 	struct wprint   { int lpos; vector<watom> list; };
-	using  wstmt    = variant<wprint>;
+	struct wdim     { int lpos; string id; int val; };
+	using  wstmt    = variant<wprint, wdim>;
 	using  wblock   = vector<wstmt>;
 	struct wfunc    { int lpos; string name; wblock block; };
 	
@@ -66,6 +68,7 @@ struct WBParser : WBParserBase {
 			if      (accept("$eol")) ;
 			else if (accept("end $eol"))  return true;
 			else if (pprint(func.block)) ;
+			else if (pdim(func.block)) ;
 			else    syntaxerror();
 		return syntaxerror();
 	}
@@ -73,19 +76,31 @@ struct WBParser : WBParserBase {
 	int pprint(wblock& block) {
 		if (!accept("print"))  return false;
 		int lpos = tok.linepos();
-		// require("$strlit $eol");
-		// block.push_back(wprint{ lpos, tok.stripliteral(tok.presult.at(0)) });
 		block.push_back(wprint{ lpos });
 		auto& pr = get<wprint>(block.back());
+		// parse each item to print
 		while (!tok.eof()) {
 			// printf("%s\n", tok.peek().c_str());
 			if      (peek("$eol"))  break;
-			else if (accept("$strlit"))  pr.list.push_back( tok.stripliteral(tok.presult.at(0)) );
-			else if (accept("$number"))  pr.list.push_back( stoi(tok.presult.at(0)) );
+			else if (accept("$strlit"))      pr.list.push_back( tok.stripliteral(tok.presult.at(0)) );
+			else if (accept("$number"))      pr.list.push_back( stoi(tok.presult.at(0)) );
+			else if (accept("$identifier"))  pr.list.push_back( wvar{ tok.presult.at(0) } );
 			else    syntaxerror();
 			if (!accept(","))  break;
 		}
 		require("$eol");
+		return true;
+	}
+
+	int pdim(wblock& block) {
+		if (!accept("dim"))  return false;
+		int lpos = tok.linepos();
+		block.push_back(wdim{ lpos });
+		auto& dim = get<wdim>(block.back());
+		// dim expression
+		require("$identifier = $number $eol");
+		dim.id  = tok.presult.at(0);
+		dim.val = stoi(tok.presult.at(2));
 		return true;
 	}
 
