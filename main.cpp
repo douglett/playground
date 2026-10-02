@@ -84,6 +84,6 @@ int main() {
 	// iproject.run();
 	
 	// mainloop();
-	wbparser.parseall();
-	runtime2.start();
+	int ok = wbparser.parseall();
+	if (ok)  runtime2.start();
 }

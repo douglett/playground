@@ -7,7 +7,8 @@
 extern WBProject project;
 
 struct WBParserBase {
-	struct wprint   { int lpos; string s; };
+	using  watom    = variant<string, int>;
+	struct wprint   { int lpos; vector<watom> list; };
 	using  wstmt    = variant<wprint>;
 	using  wblock   = vector<wstmt>;
 	struct wfunc    { int lpos; string name; wblock block; };
@@ -71,8 +72,19 @@ struct WBParser : WBParserBase {
 	int pprint(wblock& block) {
 		if (!accept("print"))  return false;
 		int lpos = tok.linepos();
-		require("$strlit $eol");
-		block.push_back(wprint{ lpos, tok.stripliteral(tok.presult.at(0)) });
+		// require("$strlit $eol");
+		// block.push_back(wprint{ lpos, tok.stripliteral(tok.presult.at(0)) });
+		block.push_back(wprint{ lpos });
+		auto& pr = get<wprint>(block.back());
+		while (!tok.eof()) {
+			// printf("%s\n", tok.peek().c_str());
+			if      (peek("$eol"))  break;
+			else if (accept("$strlit"))  pr.list.push_back( tok.stripliteral(tok.presult.at(0)) );
+			else if (accept("$number"))  pr.list.push_back( stoi(tok.presult.at(0)) );
+			else    syntaxerror();
+			if (!accept(","))  break;
+		}
+		require("$eol");
 		return true;
 	}
 

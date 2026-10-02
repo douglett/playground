@@ -9,6 +9,11 @@ struct WBRuntime2 : WBParserBase {
 		return rfunc(wbparser.functions.at("main"));
 	}
 
+	int runtimeerror(int lpos) {
+		logerr("runtime error, line " + to_string(lpos));
+		throw runtime_error("syntaxerror");
+	}
+
 	int rfunc(const wfunc& fn) {
 		for (auto& stmt : fn.block)
 			if (const wprint* pr = get_if<wprint>(&stmt))  rprint(*pr);
@@ -16,7 +21,11 @@ struct WBRuntime2 : WBParserBase {
 	}
 
 	int rprint(const wprint& pr) {
-		printf("%s\n", pr.s.c_str());
+		for (auto& v : pr.list)
+			if      (auto* s = get_if<string>(&v))  printf("%s ", s->c_str());
+			else if (auto* i = get_if<int>(&v))     printf("%i ", *i);
+			else    runtimeerror(pr.lpos);
+		printf("\n");
 		return true;
 	}
 };
