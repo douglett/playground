@@ -7,4 +7,7 @@ function main()
 
 	let a = 2 + 2
 	print a
+
+	dim b = a+a
+	print b
 end

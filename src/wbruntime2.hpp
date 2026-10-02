@@ -73,7 +73,7 @@ struct WBRuntime2 : WBParserBase {
 	void rdim(const wdim& dim) {
 		lpos = dim.lpos;
 		if (memory.count(dim.id))  memoryerror();
-		memory[dim.id] = dim.val;
+		memory[dim.id] = rexpri(dim.ex);
 	}
 	
 	void rlet(const wlet& let) {
@@ -83,8 +83,6 @@ struct WBRuntime2 : WBParserBase {
 	}
 
 	int rexpri(const wexpr& ex) {
-		// if (ex.op == "+")  return get<int>(ex.a) + get<int>(ex.b);
-		// if (ex.op == "-")  return get<int>(ex.a) + get<int>(ex.b);
 		if      (ex.op == "")   return atomi(ex.a);
 		else if (ex.op == "+")  return atomi(ex.a) + atomi(ex.b);
 		else if (ex.op == "-")  return atomi(ex.a) - atomi(ex.b);

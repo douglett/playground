@@ -11,7 +11,7 @@ struct WBParserBase {
 	using  watom    = variant<int, string, wvar>;
 	struct wexpr    { watom a, b; string op; };
 	struct wprint   { int lpos; vector<watom> list; };
-	struct wdim     { int lpos; string id; int val; };
+	struct wdim     { int lpos; string id; wexpr ex; };
 	struct wlet     { int lpos; string id; wexpr ex; };
 	using  wstmt    = variant<wprint, wdim, wlet>;
 	using  wblock   = vector<wstmt>;
@@ -101,9 +101,10 @@ struct WBParser : WBParserBase {
 		block.push_back(wdim{ lpos });
 		auto& dim = get<wdim>(block.back());
 		// dim expression
-		require("$identifier = $number $eol");
+		require("$identifier =");
 		dim.id  = tok.presult.at(0);
-		dim.val = stoi(tok.presult.at(2));
+		pexpr(dim.ex) || syntaxerror();
+		require("$eol");
 		return true;
 	}
 
