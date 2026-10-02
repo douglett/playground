@@ -128,19 +128,28 @@ struct WBParser : WBParserBase {
 		return pxadd(ex);
 	}
 	int pxadd(wexpr& ex) {
-		watom a;
-		if (!pxatom(a))  return false;
-		ex = a;
+		// TODO: messy
+		if (!pxmul(ex))  return false;
 		if (accept("+") || accept("-")) {
+			wexpr a = ex, b;
 			ex = wexprop{ tok.presult.at(0), {a} };
-			wexpr b;
-			pxadd(b) || syntaxerror();
+			pexpr(b) || syntaxerror();
 			get<wexprop>(ex).ab.push_back(b);
 		}
 		return true;
 	}
 	int pxmul(wexpr& ex) {
-		return false;
+		// TODO: messy
+		watom a;
+		if (!pxatom(a))  return false;
+		ex = a;
+		if (accept("*") || accept("/")) {
+			ex = wexprop{ tok.presult.at(0), {a} };
+			wexpr b;
+			pexpr(b) || syntaxerror();
+			get<wexprop>(ex).ab.push_back(b);
+		}
+		return true;
 	}
 	int pxatom(watom& a) {
 		if      (accept("$number"))      return a = stoi(tok.presult.at(0)), true;

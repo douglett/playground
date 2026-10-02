@@ -10,4 +10,7 @@ function main()
 
 	dim b = a + a - 2
 	print b
+
+	let b = 2+10*10
+	print b
 end

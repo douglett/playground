@@ -86,8 +86,12 @@ struct WBRuntime2 : WBParserBase {
 		if (auto* a  = get_if<watom>(&ex))
 			return atomi(*a);
 		if (auto* op = get_if<wexprop>(&ex)) {
-			if      (op->op == "+")  return rexpri(op->ab.at(0)) + rexpri(op->ab.at(1));
-			else if (op->op == "-")  return rexpri(op->ab.at(0)) - rexpri(op->ab.at(1));
+			int a = rexpri( op->ab.at(0) ),
+				b = rexpri( op->ab.at(1) );
+			if      (op->op == "+")  return a + b;
+			else if (op->op == "-")  return a - b;
+			else if (op->op == "*")  return a * b;
+			else if (op->op == "/")  return a / b;
 		}
 		return runtimeerror();
 	}
