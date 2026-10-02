@@ -37,14 +37,14 @@ void paintedit() {
 }
 
 void paintrun() {
-	// auto& f = gfx.font.font();
-	// for (size_t i = 0; i < runtime.lines.size(); i++) {
-	// 	gfx.print(runtime.lines[i], 0, i*f.charh, WHITE);
-	// }
+	auto& f = gfx.font.font();
+	for (size_t i = 0; i < runtime2.history.size(); i++) {
+		gfx.print(runtime2.history[i], 0, i*f.charh, WHITE);
+	}
 }
 
 void mainloop() {
-	// int running = 0;
+	int running = 0;
 	// setup window
 	gfx.screen.width = 800;
 	gfx.screen.height = 600;
@@ -57,17 +57,17 @@ void mainloop() {
 		if ((IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) && IsKeyPressed(KEY_ENTER))
 			gfx.screen.fullscreen();
 		
-		// if (!running) {
-		// 	if (IsKeyPressed(KEY_F5))
-		// 		running = true,
-		// 		runtime.start();
-		// 	paintedit();
-		// } else {
-		// 	if (IsKeyPressed(KEY_F6))
-		// 		running = false;
-		// 	runtime.pcontinue();
-		// 	paintrun();
-		// }
+		if (!running) {
+			if (IsKeyPressed(KEY_F5))
+				running = true,
+				runtime2.start();
+			paintedit();
+		} else {
+			if (IsKeyPressed(KEY_F6))
+				running = false;
+			// runtime.pcontinue();
+			paintrun();
+		}
 		
 		// DrawTexture(gfx.qbfont.getselectedfont().texture, 50, 50, WHITE);
 		gfx.flip();
@@ -83,7 +83,8 @@ int main() {
 	// iproject.report();
 	// iproject.run();
 	
-	// mainloop();
-	int ok = wbparser.parseall();
-	if (ok)  runtime2.start();
+	wbparser.parseall();
+	// if (ok)  runtime2.start();
+	
+	mainloop();
 }
