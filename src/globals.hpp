@@ -4,7 +4,7 @@
 #include <vector>
 #include "tokenizer.hpp"
 #include "wbproject.hpp"
-// #include "wbruntime.hpp"
+#include "wbruntime.hpp"
 #include "wbparser.hpp"
 using namespace std;
 
