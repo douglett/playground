@@ -59,12 +59,6 @@ struct WBRuntime2 : WBParserBase {
 	// -- Run --
 	void rfunc(const wfunc& fn) {
 		lpos = fn.lpos;
-		// for (auto& stmt : fn.block)
-		// 	if      (auto* st = get_if<wprint>(&stmt))  rprint(*st);
-		// 	else if (auto* st = get_if<wdim>(&stmt))    rdim(*st);
-		// 	else if (auto* st = get_if<wlet>(&stmt))    rlet(*st);
-		// 	else if (auto* st = get_if<wwhile>(&stmt))  rwhile(*st);
-		// 	else    runtimeerror();  // warning: this will be wrong, but shouldn't be run
 		rblock(fn.block);
 	}
 

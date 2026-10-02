@@ -52,7 +52,7 @@ struct QBFont {
 	void print(string str, int x, int y, Color col=WHITE) {
 		// replace special characters
 		for (size_t i = 0; i < str.length(); i++)
-			if      (str[i] == '\t')  str.replace(i, i+1, "    ");
+			if      (str[i] == '\t')  str.replace(i, 1, "    ");
 			else if (str[i] == '\n')  str.erase(i);
 		// print letters
 		const Font& f = font();

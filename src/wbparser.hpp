@@ -20,10 +20,6 @@ struct WBParserBase {
 	using  wblock   = vector<wstmt>;
 	struct wwhile   { int lpos; wexpr ex; wblock block; };
 	struct wfunc    { int lpos; string name; wblock block; };
-
-	
-	// int log    (const string& err)  { return printf("%s\n", err.c_str()), true; }
-	// int logerr (const string& err)  { return errormsg = err, fprintf(stderr, "%s\n", err.c_str()), false; }
 };
 
 struct WBParser : WBParserBase {
@@ -65,19 +61,13 @@ struct WBParser : WBParserBase {
 
 	int pfunc() {
 		if (!accept("function"))  return false;
-		int lpos = tok.linepos();
-		require("$identifier ( ) $eol");
+		require("$identifier");
 		string id = tok.presult.at(0);
 		if (functions.count(id))  syntaxerror();
-		auto& func = functions[id] = { lpos, id };
-		// parse statements
-		// while (!tok.eof())
-		// 	if      (accept("$eol")) ;
-		// 	else if (accept("end $eol"))  return true;
-		// 	else if (pprint(func.block)) ;
-		// 	else if (pdim(func.block)) ;
-		// 	else if (plet(func.block)) ;
-		// 	else    syntaxerror();
+		auto& func = functions[id] = { tok.linepos(), id };
+		// arguments
+		require("( ) $eol");
+		// function block
 		return pblock(func.block);
 	}
 
@@ -96,8 +86,7 @@ struct WBParser : WBParserBase {
 
 	int pprint(wblock& block) {
 		if (!accept("print"))  return false;
-		int lpos = tok.linepos();
-		block.push_back(wprint{ lpos });
+		block.push_back(wprint{ tok.linepos() });
 		auto& pr = get<wprint>(block.back());
 		// parse each item to print
 		while (!tok.eof()) {
@@ -115,8 +104,7 @@ struct WBParser : WBParserBase {
 
 	int pdim(wblock& block) {
 		if (!accept("dim"))  return false;
-		int lpos = tok.linepos();
-		block.push_back(wdim{ lpos });
+		block.push_back(wdim{ tok.linepos() });
 		auto& dim = get<wdim>(block.back());
 		// dim expression
 		require("$identifier =");
@@ -128,8 +116,7 @@ struct WBParser : WBParserBase {
 
 	int plet(wblock& block) {
 		if (!accept("let"))  return false;
-		int lpos = tok.linepos();
-		block.push_back(wlet{ lpos });
+		block.push_back(wlet{ tok.linepos() });
 		auto& let = get<wlet>(block.back());
 		// let expression
 		require("$identifier =");
@@ -141,12 +128,12 @@ struct WBParser : WBParserBase {
 
 	int pwhile(wblock& block) {
 		if (!accept("while"))  return false;
-		int lpos = tok.linepos();
-		block.push_back(wwhile{ lpos });
+		block.push_back(wwhile{ tok.linepos() });
 		auto& wwl = get<wwhile>(block.back());
 		// while expression
 		pexpri(wwl.ex) || syntaxerror();
 		require("$eol");
+		// while block
 		pblock(wwl.block);
 		return true;
 	}
@@ -173,13 +160,10 @@ struct WBParser : WBParserBase {
 		return true;
 	}
 	int pxadd(wexpr& ex) {
-		// TODO: messy
 		if (!pxmul(ex))  return false;
 		if (accept("+") || accept("-")) {
-			wexpr a = ex, b;
-			ex = wexprop{ tok.presult.at(0), {a} };
-			pexpri(b) || syntaxerror();
-			get<wexprop>(ex).ab.push_back(b);
+			auto& ex2 = pxconvertprop(ex);
+			pexpri(ex2.ab.at(1)) || syntaxerror();
 		}
 		return true;
 	}
@@ -189,10 +173,8 @@ struct WBParser : WBParserBase {
 		if (!pxatom(a))  return false;
 		ex = a;
 		if (accept("*") || accept("/")) {
-			ex = wexprop{ tok.presult.at(0), {a} };
-			wexpr b;
-			pexpri(b) || syntaxerror();
-			get<wexprop>(ex).ab.push_back(b);
+			auto& ex2 = pxconvertprop(ex);
+			pexpri(ex2.ab.at(1)) || syntaxerror();
 		}
 		return true;
 	}
