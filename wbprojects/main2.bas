@@ -18,9 +18,12 @@ function main()
 	' dim d = c
 	' print c, d
 
-	dim i = 0
-	while i < 5
-		let i = i + 1
-		print i
-	end
+	' dim i = 0
+	' while i < 5
+	' 	let i = i + 1
+	' 	print i
+	' end
+
+	dim s = ""
+	input s
 end

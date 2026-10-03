@@ -16,7 +16,8 @@ struct WBParserBase {
 	struct wprint   { int lpos; vector<watom> list; };
 	struct wdim     { int lpos; string id; wexpr ex; };
 	struct wlet     { int lpos; string id; wexpr ex; };
-	using  wstmt    = variant<wprint, wdim, wlet, wwhile>;
+	struct winput   { int lpos; string id; };
+	using  wstmt    = variant<wprint, wdim, wlet, wwhile, winput>;
 	using  wblock   = vector<wstmt>;
 	struct wwhile   { int lpos; wexpr ex; wblock block; };
 	struct wfunc    { int lpos; string name; wblock block; };
@@ -80,6 +81,7 @@ struct WBParser : WBParserBase {
 			else if (pdim(block)) ;
 			else if (plet(block)) ;
 			else if (pwhile(block)) ;
+			else if (pinput(block)) ;
 			else    break;
 		return syntaxerror();
 	}
@@ -135,6 +137,16 @@ struct WBParser : WBParserBase {
 		require("$eol");
 		// while block
 		pblock(wwl.block);
+		return true;
+	}
+
+	int pinput(wblock& block) {
+		if (!accept("input"))  return false;
+		block.push_back(winput{ tok.linepos() });
+		auto& inp = get<winput>(block.back());
+		// input var
+		require("$identifier $eol");
+		inp.id = tok.presult.at(0);
 		return true;
 	}
 
