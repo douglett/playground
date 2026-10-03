@@ -26,4 +26,5 @@ function main()
 
 	dim s = ""
 	input s
+	print "input was:", s
 end

@@ -2,11 +2,20 @@
 
 extern WBParser wbparser;
 
+struct WBRuntimeIO {
+	int input(string& input) {
+		getline(cin, input);
+		return 1;
+	};
+};
+
 struct WBRuntime2 : WBParserBase {
 	using Mem_T = variant<int, string>;
 
 	vector<string> history;
 	map<string, Mem_T> memory;
+	WBRuntimeIO iodefault;
+	WBRuntimeIO* iooverride = NULL;
 	int lpos = 0;
 
 	int start() {
@@ -68,6 +77,7 @@ struct WBRuntime2 : WBParserBase {
 			else if (auto* st = get_if<wdim>(&stmt))    rdim(*st);
 			else if (auto* st = get_if<wlet>(&stmt))    rlet(*st);
 			else if (auto* st = get_if<wwhile>(&stmt))  rwhile(*st);
+			else if (auto* st = get_if<winput>(&stmt))  rinput(*st);
 			else    runtimeerror();  // warning: this will be wrong, but shouldn't be run
 	}
 
@@ -101,6 +111,12 @@ struct WBRuntime2 : WBParserBase {
 		lpos = wwl.lpos;
 		while (rexpri(wwl.ex))
 			rblock(wwl.block);
+	}
+
+	void rinput(const winput& input) {
+		string& inp = getmems(input.id);
+		auto& io = iooverride ? *iooverride : iodefault;
+		io.input(inp);
 	}
 
 	// -- Expressions --
@@ -145,5 +161,10 @@ struct WBRuntime2 : WBParserBase {
 		int* i = get_if<int>(&getmem(id));
 		if (!i)  memoryerror();
 		return *i;
+	}
+	string& getmems(const string& id) {
+		string* s = get_if<string>(&getmem(id));
+		if (!s)  memoryerror();
+		return *s;
 	}
 };
