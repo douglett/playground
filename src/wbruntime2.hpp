@@ -3,7 +3,7 @@
 extern WBParser wbparser;
 
 struct WBRuntimeIO {
-	int input(string& input) {
+	virtual int input(string& input) {
 		getline(cin, input);
 		return 1;
 	};
@@ -27,7 +27,7 @@ struct WBRuntime2 : WBParserBase {
 		try {
 			printf("running function 'main'...\n");
 			rfunc(wbparser.functions.at("main"));
-			lognl(), log("[-program end-]");
+			lognl(), log("[-program end-]"), lognl();
 			return true;
 		} catch(runtime_error& e) {
 			return false;
@@ -42,8 +42,8 @@ struct WBRuntime2 : WBParserBase {
 	// }
 	void log(const string& msg) {
 		if (!history.size())  history.push_back("");
-		history.back() += msg + " ";
-		printf("%s ", msg.c_str());
+		history.back() += msg;
+		printf("%s", msg.c_str());
 	}
 	void lognl() {
 		history.push_back("");
@@ -83,7 +83,7 @@ struct WBRuntime2 : WBParserBase {
 
 	void rprint(const wprint& pr) {
 		lpos = pr.lpos;
-		for (auto& arg : pr.list)
+		for (auto& arg : pr.list) {
 			if      (auto* s = get_if<string>(&arg))  log(*s);
 			else if (auto* i = get_if<int>(&arg))     log(*i);
 			else if (auto* v = get_if<wvar>(&arg)) {
@@ -92,6 +92,8 @@ struct WBRuntime2 : WBParserBase {
 				else if (auto* s = get_if<string>(&mem))  log(*s);
 			}
 			else    runtimeerror();
+			log(" ");
+		}
 		lognl();
 	}
 
@@ -116,7 +118,8 @@ struct WBRuntime2 : WBParserBase {
 	void rinput(const winput& input) {
 		string& inp = getmems(input.id);
 		auto& io = iooverride ? *iooverride : iodefault;
-		io.input(inp);
+		int ok = io.input(inp);
+		if (!ok)  runtimeerror();
 	}
 
 	// -- Expressions --

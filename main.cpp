@@ -43,6 +43,37 @@ void paintrun() {
 	}
 }
 
+struct VisualIO : WBRuntimeIO {
+	virtual int input(string& input) {
+		runtime2.log("");
+		string startln = runtime2.history.back();
+		input = "";
+
+		while (GetCharPressed() > 0) ; // clear input history
+
+		while (!gfx.shouldQuit()) {
+			// get keyboard input
+			for (int key = GetCharPressed(); key > 0; key = GetCharPressed())
+				if (key >= 32 && key <= 125)
+					input += (char)key;
+			// control characters
+			if (IsKeyPressed(KEY_BACKSPACE) && input.size() > 0)
+				input.pop_back();
+			if (IsKeyPressed(KEY_ENTER)) {
+				runtime2.history.back() = startln + input;
+				runtime2.lognl();
+				return 1;
+			}
+			// show output while typing
+			runtime2.history.back() = startln + input + "_";
+			paintrun();
+			gfx.flip();
+		}
+		return 0;
+	}
+};
+VisualIO visualio;
+
 void mainloop() {
 	int running = 0;
 	// setup window
@@ -61,14 +92,15 @@ void mainloop() {
 			if (IsKeyPressed(KEY_F5))
 				running = true,
 				runtime2.start();
-			paintedit();
+			// paintedit();
 		} else {
 			if (IsKeyPressed(KEY_F6))
 				running = false;
+			// paintrun();
 			// runtime.pcontinue();
-			paintrun();
 		}
-		
+
+		running ? paintrun() : paintedit();
 		// DrawTexture(gfx.qbfont.getselectedfont().texture, 50, 50, WHITE);
 		gfx.flip();
 	}
@@ -84,6 +116,7 @@ int main() {
 	// iproject.run();
 	
 	wbparser.parseall();
+	runtime2.iooverride = &visualio;
 	// if (ok)  runtime2.start();
 	
 	mainloop();
