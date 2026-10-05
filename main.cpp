@@ -5,9 +5,8 @@ using namespace std;
 // define globals
 GFX gfx;
 WBProject project;
-// WBRuntime runtime;
 WBParser wbparser;
-WBRuntime2 runtime2;
+WBRuntime runtime;
 
 void paintedit() {
 	auto& f = gfx.font.font();
@@ -38,15 +37,15 @@ void paintedit() {
 
 void paintrun() {
 	auto& f = gfx.font.font();
-	for (size_t i = 0; i < runtime2.history.size(); i++) {
-		gfx.print(runtime2.history[i], 0, i*f.charh, WHITE);
+	for (size_t i = 0; i < runtime.history.size(); i++) {
+		gfx.print(runtime.history[i], 0, i*f.charh, WHITE);
 	}
 }
 
 struct VisualIO : WBRuntimeIO {
 	virtual int input(string& input) {
-		runtime2.log("");
-		string startln = runtime2.history.back();
+		runtime.log("");
+		string startln = runtime.history.back();
 		input = "";
 
 		while (GetCharPressed() > 0) ; // clear input history
@@ -60,12 +59,12 @@ struct VisualIO : WBRuntimeIO {
 			if (IsKeyPressed(KEY_BACKSPACE) && input.size() > 0)
 				input.pop_back();
 			if (IsKeyPressed(KEY_ENTER)) {
-				runtime2.history.back() = startln + input;
-				runtime2.lognl();
+				runtime.history.back() = startln + input;
+				runtime.lognl();
 				return 1;
 			}
 			// show output while typing
-			runtime2.history.back() = startln + input + "_";
+			runtime.history.back() = startln + input + "_";
 			paintrun();
 			gfx.flip();
 		}
@@ -80,9 +79,8 @@ void mainloop() {
 	gfx.screen.width = 800;
 	gfx.screen.height = 600;
 	gfx.screen.zoom = 1;
-	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	gfx.init();
-	// SetWindowState(FLAG_WINDOW_RESIZABLE);
+	SetWindowState(FLAG_WINDOW_RESIZABLE);
 
 	while (!gfx.shouldQuit()) {
 		if ((IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) && IsKeyPressed(KEY_ENTER))
@@ -91,7 +89,7 @@ void mainloop() {
 		if (!running) {
 			if (IsKeyPressed(KEY_F5))
 				running = true,
-				runtime2.start();
+				runtime.start();
 			// paintedit();
 		} else {
 			if (IsKeyPressed(KEY_F6))
@@ -116,8 +114,8 @@ int main() {
 	// iproject.run();
 	
 	wbparser.parseall();
-	runtime2.iooverride = &visualio;
-	// if (ok)  runtime2.start();
+	runtime.iooverride = &visualio;
+	// if (ok)  runtime.start();
 	
 	mainloop();
 }

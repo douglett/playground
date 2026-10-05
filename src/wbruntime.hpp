@@ -1,288 +1,173 @@
 #pragma once
-#include "wbproject.hpp"
-#include <map>
-#include <format>
-#include <variant>
 
-extern WBProject project;
+extern WBParser wbparser;
 
-struct WBRuntime {
-	enum STATE_T { STATE_IDLE, STATE_RUNNING, STATE_END, STATE_ERROR, STATE_INPUT };
-	typedef variant<int, string> Mem_T;
-	struct ControlPoint { string type; int lpos, epos; };
-	const static inline string STR_DEFAULT;
+struct WBRuntimeIO {
+	virtual int input(string& input) {
+		getline(cin, input);
+		return 1;
+	};
+};
 
-	vector<string> lines;
-	map<string, Mem_T> globals;
-	vector<ControlPoint> ctrl;
-	Tokenizer tok;
-	int fpos = 0, lpos = 0;
-	STATE_T state = STATE_IDLE;
-	struct { string id, startln, input; } input;
+struct WBRuntime : WBParserBase {
+	using Mem_T = variant<int, string>;
+
+	vector<string> history;
+	map<string, Mem_T> memory;
+	WBRuntimeIO  iodefault;
+	WBRuntimeIO* iooverride = NULL;
+	int lpos = 0;
 
 	int start() {
-		// reset
-		lines = {}, globals = {}, tok.reset();
-		fpos = lpos = 0;
-		state = STATE_IDLE;
-		// indicate start
-		if (project.srcfiles.size() == 0)
-			return println("[-no source files-]"), false;
-		// preparse
-		if (!preparse())
-			return state = STATE_ERROR, false;
-		// run from start
-		printf("[program start]\n");
-		state = STATE_RUNNING;
-		return pcontinue();
-	}
-
-	int pcontinue() {
-		if (state == STATE_INPUT)    return rinput(), true;
-		if (state != STATE_RUNNING)  return false;
+		lpos = 0, memory = {};
+		if (wbparser.errormsg.length())
+			return logerr(wbparser.errormsg);
+		if (!wbparser.functions.count("main"))
+			return logerr("no function found: main");
 		try {
-			return pline();
-		} catch (runtime_error& e) {
-			state = STATE_ERROR;
-			return false;
-		}
-	}
-
-	// -- Parse Helpers --
-	int peek   (const string& rule) { return tok.peek(rule); }
-	int accept (const string& rule) { return tok.accept(rule); }
-	int require(const string& rule) { if (!tok.require(rule)) syntaxerror(); return true; }
-	const string& cline() { return endline() ? STR_DEFAULT : project.srcfiles.at(fpos).lines.at(lpos); }
-	int endline()      { return fpos < 0 || lpos < 0 || fpos >= (int)project.srcfiles.size() || lpos >= (int)project.srcfiles[fpos].lines.size(); }
-	int tokenizenext() { return tok.reset(), tok.tokenizeline(cline()); }
-
-	int preparse() {
-		try {
-			lpos = 0;
-			while (!endline()) {
-				tokenizenext();
-				if      (peek("while"))  preparseblock("while");
-				else if (peek("end"))    throw runtime_error("dangling end");
-				lpos++;
-			}
+			printf("running function 'main'...\n");
+			rfunc(wbparser.functions.at("main"));
+			lognl(), log("[-program end-]"), lognl();
+			return true;
 		} catch(runtime_error& e) {
-			println("[-preparse error line " + to_string(lpos) + "-]");
-			println(e.what());
 			return false;
 		}
-		// printf("preparse OK!\n");
-		lpos = 0;
-		return true;
 	}
 
-	int preparseblock(const string& type) {
-		// printf("block_start: %s %d\n", type.c_str(), lpos);
-		int start = lpos++;
-		while (!endline()) {
-			tokenizenext();
-			if      (peek("while"))  preparseblock("while");
-			else if (peek("end")) {
-				// printf("block_end: %s %d\n", type.c_str(), lpos);
-				ctrl.push_back({ type, start, lpos });
-				return lpos++, true;
-			}
-			lpos++;
-		}
-		throw runtime_error("unterminated block");
+	// -- Logging --
+	void log(int i) { log(to_string(i)); }
+	// void log(const Mem_T& v) {
+	// 	if      (auto* vv = get_if<int>(&v))     log(to_string(*vv));
+	// 	else if (auto* vv = get_if<string>(&v))  log(*vv);
+	// }
+	void log(const string& msg) {
+		if (!history.size())  history.push_back("");
+		history.back() += msg;
+		printf("%s", msg.c_str());
 	}
-
-	// -- Parse Statements --
-	int pline() {
-		auto& lines = project.srcfiles.at(fpos).lines;
-		if (lpos >= (int)lines.size()) {
-			println(), println("[-program end-]");
-			return state = STATE_END, false;
-		}
-		// parse line
-		tok.reset(), tok.tokenizeline(lines[lpos]);
-		printf("L%02d: ", lpos+1), tok.show();
-		// println(format( "L{:02}: {}", lpos+1, tok.showstr(1) ));
-		// run statement
-		if      (accept("$eof")) ;
-		else if (pprint()) ;
-		else if (pdim()) ;
-		else if (plet()) ;
-		else if (pinput()) ;
-		else if (pwhile()) ;
-		else if (pend()) return true;
-		else    syntaxerror();
-		// next
-		lpos++;		
-		return true;
+	void lognl() {
+		history.push_back("");
+		printf("\n");
 	}
-
-	int pdim() {
-		if (!accept("dim"))  return false;
-		require("$identifier =");
-		string id = tok.presult.at(0);
-		if      (globals.count(id))     memoryerror();
-		else if (string s;  pexprs(s))  globals[id] = s;
-		else if (int i = 0; pexpr(i))   globals[id] = i;
-		else    syntaxerror();
-		return true;
-	}
-
-	int plet() {
-		if (!accept("let"))  return false;
-		require("$identifier =");
-		string id = tok.presult.at(0);
-		if      (string s;  pexprs(s))  memgets(id) = s;
-		else if (int i = 0; pexpr(i))   memgeti(id) = i;
-		else    syntaxerror();
-		return true;
-	}
-
-	int pprint() {
-		if (!accept("print"))  return false;
-		while (!tok.eof())
-			if (accept("$number"))
-				print(tok.presult.at(0) + " ");
-			else if (accept("$strlit"))
-				print(tok.stripliteral(tok.presult.at(0)) + " ");
-			else if (accept("$identifier"))
-				print(memget(tok.presult.at(0)));
-			else
-				syntaxerror();
-		println();
-		return true;
-	}
-
-	int pinput() {
-		if (!accept("input"))  return false;
-		require("$identifier $eof");
-		input.id = tok.presult.at(0);
-		memgets(input.id);  // validate
-		state = STATE_INPUT;
-		print(), input.input = "", input.startln = lines.back();
-		return rinput(), true;
-	}
-
-	int pwhile() {
-		if (!accept("while"))  return false;
-		int i = 0;
-		if (!pexpr(i))  syntaxerror();
-		require("$eof");
-		if (!i)  ctrljne("while");
-		return true;
-	}
-
-	int pend() {
-		if (!accept("end"))  return false;
-		require("$eof");
-		ctrlend();
-		return true;
-	}
-
-	int pexpr(int& i) {
-		if      (accept("$number"))      i = stoi(tok.presult.at(0));
-		else if (accept("$identifier"))  i = memgeti(tok.presult.at(0));
-		else    return false;
-		// TODO: order-of-prescedence, brackets
-		while (accept("+") || accept("-") || accept("*") || accept("/") || accept("< =")) {
-			auto op = tok.joinstr(tok.presult, "");
-			int n = 0;
-			if      (accept("$number"))      n = stoi(tok.presult.at(0));
-			else if (accept("$identifier"))  n = memgeti(tok.presult.at(0));
-			else    syntaxerror();
-			if      (op == "+" )  i += n;
-			else if (op == "-" )  i -= n;
-			else if (op == "*" )  i *= n;
-			else if (op == "/" )  i /= n;
-			else if (op == "<=")  i = i <= n;
-			else    syntaxerror();
-		}
-		return true;
-	}
-
-	int pexprs(string& result) {
-		if (accept("$strlit"))
-			return result = tok.stripliteral(tok.presult.at(0)), 1;
-		return 0;
+	int logerr(const string& err) {
+		history.push_back("[-" + err + "-]");
+		fprintf(stderr, "%s\n", err.c_str());
+		return false;
 	}
 
 	// -- Errors --
-	void syntaxerror() {
-		println(), println("[-syntax error on line " + to_string(lpos+1) + "-]");
-		throw runtime_error(lines.back());
+	int runtimeerror() {
+		logerr("runtime error, line " + to_string(lpos));
+		throw runtime_error("syntaxerror");
 	}
-	void memoryerror() {
-		println(), println("[-incorrect memory access on line " + to_string(lpos+1) + "-]");
-		throw runtime_error(lines.back());
-	}
-	void controlerror() {
-		println(), println("[-control structure error on line " + to_string(lpos+1) + "-]");
-		throw runtime_error(lines.back());
+	int memoryerror() {
+		logerr("memory error, line " + to_string(lpos));
+		throw runtime_error("memoryerror");
 	}
 
-	// -- Runtime IO --
-	// void print(int i) { print(to_string(i)); }
-	void print(const Mem_T& m) {
-		if (const int* i = get_if<int>(&m))
-		print(to_string(*i));
-		else if (const string* s = get_if<string>(&m))
-		print(*s);
-	}
-	void print(const string& str="") {
-		if (lines.size() == 0)  lines.push_back("");
-		lines.back() += str;
-	}
-	void println(const string& str="") {
-		print(str);
-		lines.push_back("");
-	}
-	void rinput() {
-		// get keyboard input
-		for (int key = GetCharPressed(); key > 0; key = GetCharPressed())
-			if (key >= 32 && key <= 125)
-				input.input += (char)key;
-		// control characters
-		if (IsKeyPressed(KEY_BACKSPACE))
-			input.input.pop_back();
-		if (IsKeyPressed(KEY_ENTER)) {
-			memgets(input.id) = input.input;
-			lines.back() = input.startln + input.input;
-			println();
-			return state = STATE_RUNNING, void();
-		}
-		// show output while typing
-		lines.back() = input.startln + input.input + "_";
+	// -- Run --
+	void rfunc(const wfunc& fn) {
+		lpos = fn.lpos;
+		rblock(fn.block);
 	}
 
-	// -- Runtime Control Structures --
-	void ctrljne(const string& type) {
-		for (const auto& c : ctrl)
-			if (c.lpos == lpos)
-				return lpos = c.epos, void();
-		controlerror();
+	void rblock(const wblock& block) {
+		for (auto& stmt : block)
+			if      (auto* st = get_if<wprint>(&stmt))  rprint(*st);
+			else if (auto* st = get_if<wdim>(&stmt))    rdim(*st);
+			else if (auto* st = get_if<wlet>(&stmt))    rlet(*st);
+			else if (auto* st = get_if<wwhile>(&stmt))  rwhile(*st);
+			else if (auto* st = get_if<winput>(&stmt))  rinput(*st);
+			else    runtimeerror();  // warning: this will be wrong, but shouldn't be run
 	}
-	void ctrlend() {
-		for (const auto& c : ctrl)
-			if (c.epos == lpos) {
-				if (c.type == "while")  return lpos = c.lpos, void();
+
+	void rprint(const wprint& pr) {
+		lpos = pr.lpos;
+		for (auto& arg : pr.list) {
+			if      (auto* s = get_if<string>(&arg))  log(*s);
+			else if (auto* i = get_if<int>(&arg))     log(*i);
+			else if (auto* v = get_if<wvar>(&arg)) {
+				auto& mem = getmem(v->id);
+				if      (auto* i = get_if<int>(&mem))     log(*i);
+				else if (auto* s = get_if<string>(&mem))  log(*s);
 			}
-		controlerror();
+			else    runtimeerror();
+			log(" ");
+		}
+		lognl();
+	}
+
+	void rdim(const wdim& dim) {
+		lpos = dim.lpos;
+		if (memory.count(dim.id))  memoryerror();
+		memory[dim.id] = rexpr(dim.ex);
 	}
 	
-	// -- Runtime Memory --
-	Mem_T& memget(const string& id) {
-		if (!globals.count(id))  memoryerror();
-		return globals.at(id);
+	void rlet(const wlet& let) {
+		lpos = let.lpos;
+		if (!memory.count(let.id))  memoryerror();
+		memory.at(let.id) = rexpr(let.ex);
 	}
-	int& memgeti(const string& id) {
-		static int temp = 0;
-		auto& m = memget(id);
-		if (int* i = get_if<int>(&m))  return *i;
-		return memoryerror(), temp;
+
+	void rwhile(const wwhile& wwl) {
+		lpos = wwl.lpos;
+		while (rexpri(wwl.ex))
+			rblock(wwl.block);
 	}
-	string& memgets(const string& id) {
-		static string temp;
-		auto& m = memget(id);
-		if (string* s = get_if<string>(&m))  return *s;
-		return memoryerror(), temp;
+
+	void rinput(const winput& input) {
+		string& inp = getmems(input.id);
+		auto& io = iooverride ? *iooverride : iodefault;
+		int ok = io.input(inp);
+		if (!ok)  runtimeerror();
+	}
+
+	// -- Expressions --
+	Mem_T rexpr(const wexpr& ex) {
+		if (auto* a = get_if<watom>(&ex)) {
+			if      (auto* v = get_if<string>(a))  return *v;
+			else if (auto* v = get_if<wvar>(a))    return getmem(v->id);
+		}
+		return rexpri(ex);
+	}
+
+	int rexpri(const wexpr& ex) {
+		if (auto* a  = get_if<watom>(&ex))
+			return atomi(*a);
+		if (auto* op = get_if<wexprop>(&ex)) {
+			int a = rexpri( op->ab.at(0) ),
+				b = rexpri( op->ab.at(1) );
+			// basic maths
+			if      (op->op == "+" )  return a +  b;
+			else if (op->op == "-" )  return a -  b;
+			else if (op->op == "*" )  return a *  b;
+			else if (op->op == "/" )  return a /  b;
+			// comparisons
+			else if (op->op == "<" )  return a <  b;
+			else if (op->op == "<=")  return a <= b;
+		}
+		return runtimeerror();
+	}
+
+	int atomi(const watom& a) {
+		if      (auto* v = get_if<int>(&a))   return *v;
+		else if (auto* v = get_if<wvar>(&a))  return getmemi(v->id);
+		return runtimeerror();
+	}
+
+	// -- Memory --
+	Mem_T& getmem(const string& id) {
+		if (!memory.count(id))  memoryerror();
+		return memory[id];
+	}
+	int& getmemi(const string& id) {
+		int* i = get_if<int>(&getmem(id));
+		if (!i)  memoryerror();
+		return *i;
+	}
+	string& getmems(const string& id) {
+		string* s = get_if<string>(&getmem(id));
+		if (!s)  memoryerror();
+		return *s;
 	}
 };
