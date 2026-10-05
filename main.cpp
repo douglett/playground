@@ -10,13 +10,13 @@ WBRuntime runtime;
 
 void paintedit() {
 	auto& f = gfx.font.font();
-	int screenw = gfx.screen.width / f.charw,
-		screenh = gfx.screen.height / f.charh,
+	int screenw = gfx.screenw() / f.charw,
+		screenh = gfx.screenh() / f.charh,
 		lpanelw = 20, 
 		rpanelw = screenw - lpanelw - 1,
 		marginw = 3;
 	
-	DrawRectangle(0, 0, gfx.screen.width, f.charh, DARKGRAY);
+	DrawRectangle(0, 0, gfx.screenw(), f.charh, DARKGRAY);
 	gfx.print("f5:run f6:stop", 0, 0, BLUE);
 	string s;
 	auto lines = project.showstr();
@@ -50,7 +50,7 @@ struct VisualIO : WBRuntimeIO {
 
 		while (GetCharPressed() > 0) ; // clear input history
 
-		while (!gfx.shouldQuit()) {
+		while (!gfx.shouldquit()) {
 			// get keyboard input
 			for (int key = GetCharPressed(); key > 0; key = GetCharPressed())
 				if (key >= 32 && key <= 125)
@@ -75,16 +75,12 @@ VisualIO visualio;
 
 void mainloop() {
 	int running = 0;
-	// setup window
-	gfx.screen.width = 800;
-	gfx.screen.height = 600;
-	gfx.screen.zoom = 1;
 	gfx.init();
-	SetWindowState(FLAG_WINDOW_RESIZABLE);
+	gfx.resizable();
 
-	while (!gfx.shouldQuit()) {
+	while (!gfx.shouldquit()) {
 		if ((IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) && IsKeyPressed(KEY_ENTER))
-			gfx.screen.fullscreen();
+			gfx.fullscreen();
 		
 		if (!running) {
 			if (IsKeyPressed(KEY_F5))

@@ -12,12 +12,17 @@ struct QBFont {
 	Font qb1, qb13;
 	int selectedid = 13;
 
+	// init
 	int init() {
 		buildfont(qb1_t,  qb1);
 		buildfont(qb13_t, qb13);
 		return 0;
 	}
-
+	int destroy() {
+		UnloadTexture(qb1.texture);
+		UnloadTexture(qb13.texture);
+		return 0;
+	}
 	int buildfont(const Font_t& fontt, Font &font) {
 		if (IsTextureValid(font.texture))
 			return fprintf(stderr, "QBFont: trying to build font twice, aborting."), 1;
@@ -41,6 +46,7 @@ struct QBFont {
 		return 0;
 	}
 
+	// print functions
 	const Font& font() {
 		switch (selectedid) {
 			case 1:   return qb1;
@@ -48,7 +54,9 @@ struct QBFont {
 			default:  return qb13;
 		}
 	}
-
+	int width(const string& s) {
+		return s.length() * font().charw;
+	}
 	void print(string str, int x, int y, Color col=WHITE) {
 		// replace special characters
 		for (size_t i = 0; i < str.length(); i++)
