@@ -1,6 +1,7 @@
 #pragma once
 #include "paintable.hpp"
 #include "pugixml.hpp"
+#include "gfx.main.hpp"
 #include <sstream>
 
 struct TileMap : Paintable {
@@ -66,7 +67,7 @@ struct TileMap : Paintable {
 			auto tile = at(xx, yy);
 			// show map tile
 			if (tile.tile > 0)
-				Screen::blitt(texture, tsize, tile.tile-1, xoff+x + xx*tsize, yoff+y + yy*tsize);
+				GFX::blitt(texture, tsize, tile.tile-1, xoff+x + xx*tsize, yoff+y + yy*tsize);
 			// show collision layer
 			if (tile.collision > 0 && debug)
 				DrawRectangle(xoff+x + xx*tsize, yoff+y + yy*tsize, tsize, tsize, color);

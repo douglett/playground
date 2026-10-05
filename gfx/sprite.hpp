@@ -1,5 +1,6 @@
 #pragma once
 #include "paintable.hpp"
+#include "gfx.main.hpp"
 
 struct Sprite : Paintable {
 	int tsize = 16, tile = 0;
@@ -8,7 +9,7 @@ struct Sprite : Paintable {
 	float rot = 0;
 
 	virtual void paint(int xoff, int yoff) {
-		Screen::blittr(texture, tsize, tile, xoff+x, yoff+y, rot, blend);
+		GFX::blittr(texture, tsize, tile, xoff+x, yoff+y, rot, blend);
 	}
 
 	int  tx() { return x / tsize; }
