@@ -127,6 +127,7 @@ void buffertest() {
 
 void buffertest2() {
 	gfx.init();
+	gfx.resizable();
 	gfx.usebuffer(160, 160);
 
 	while (!gfx.shouldquit()) {
