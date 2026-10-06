@@ -7,7 +7,7 @@ using namespace std;
 // qbasic graphical font
 struct QBFont {
 	struct Font_t { int texw, texh, charw, charh; vector<uint32_t> data; };
-	struct Font   { int texw, texh, charw, charh; Texture2D texture; };
+	struct Font   { int texw, texh, charw, charh; Texture2D texture={0}; };
 	static const Font_t qb1_t, qb13_t;
 	Font qb1, qb13;
 	int selectedid = 13;

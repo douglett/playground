@@ -4,7 +4,7 @@
 
 struct Sprite : Paintable {
 	int tsize = 16, tile = 0;
-	Texture2D texture;
+	Texture2D texture={0};
 	Color blend = WHITE;
 	float rot = 0;
 

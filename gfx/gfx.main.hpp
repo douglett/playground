@@ -7,14 +7,13 @@ struct GFX {
 	// submodules
 	static inline QBFont font;
 	// vars
-	static inline string winname;
 	static inline Color bgcolor = BLACK;
 	static inline int flag_fps = 1;
 
 	// -- Screen Management --
 	static int init(int width=800, int height=600, const string& name="GFX:Game") {
 		SetTraceLogLevel(LOG_WARNING);
-		InitWindow(width, height, winname.c_str());
+		InitWindow(width, height, name.c_str());
 		if (!IsWindowReady())  return 1;
 		SetTargetFPS(60);
 		// submodules

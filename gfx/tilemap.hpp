@@ -8,7 +8,7 @@ struct TileMap : Paintable {
 	struct tiledata { int tile, collision; };
 	int twidth = 0, theight = 0, tsize = 16;
 	vector<int> data, cdata;
-	Texture2D texture;
+	Texture2D texture={0};
 	int debug = false, boundscollide = 0;
 
 	int load(const string& fname) {

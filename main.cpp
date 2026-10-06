@@ -77,6 +77,8 @@ void mainloop() {
 	int running = 0;
 	gfx.init();
 	gfx.resizable();
+	GFXBuffer buffer;
+	buffer.init(160, 160);
 
 	while (!gfx.shouldquit()) {
 		if ((IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) && IsKeyPressed(KEY_ENTER))
@@ -95,11 +97,32 @@ void mainloop() {
 		}
 
 		running ? paintrun() : paintedit();
-		// DrawTexture(gfx.qbfont.getselectedfont().texture, 50, 50, WHITE);
+		// DrawTexture(gfx.font.getselectedfont().texture, 50, 50, WHITE);
 		gfx.flip();
 	}
 
 	gfx.destroy();
+}
+
+void buffertest() {
+	gfx.init();
+	GFXBuffer buffer;
+	buffer.init(160, 160);
+
+	while (!gfx.shouldquit()) {
+		BeginTextureMode(buffer.rtexture);
+			ClearBackground(SKYBLUE);
+			DrawRectangle(0, 0, 20, 20, RED);
+			DrawCircleV({10, 10}, 5, MAROON);
+		EndTextureMode();
+		
+		buffer.paint(50, 50);
+		gfx.flip();
+	}
+
+	buffer.destroy();
+	gfx.destroy();
+	cout << buffer.width() << endl;
 }
 
 int main() {
@@ -113,5 +136,6 @@ int main() {
 	runtime.iooverride = &visualio;
 	// if (ok)  runtime.start();
 	
-	mainloop();
+	// mainloop();
+	buffertest();
 }
