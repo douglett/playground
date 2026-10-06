@@ -8,6 +8,7 @@ struct GFX {
 	// submodules
 	static inline QBFont font;
 	static inline GFXBuffer buffer;
+	static inline Assets assets;
 	// vars
 	static inline Color bgcolor = BLACK;
 	static inline int flag_fps = 1;
@@ -28,6 +29,7 @@ struct GFX {
 	static void destroy() {
 		font.destroy();
 		buffer.destroy();
+		assets.destroy();
 		CloseWindow();  // Close window and OpenGL context
 	}
 	static void usebuffer(int width, int height, GFXBuffer::SCALE_T scale=GFXBuffer::SCALE_STRETCH_FIT) {
@@ -49,6 +51,11 @@ struct GFX {
 		begin();  // begin drawing mode for next frame
 	}
 
+	// -- Assets --
+	static int loadtexture(const string& alias, const string& fname) { return assets.loadtexture(alias, fname); }
+	static void unload(const string& alias) { return assets.unload(alias); }
+	static Texture& gettexture(const string& alias) { return assets.gettexture(alias); }
+
 	// -- Basic Drawing --
 	static void print(const string& str, int x, int y, Color col=WHITE) {
 		font.print(str, x, y, col);
@@ -57,6 +64,7 @@ struct GFX {
 		DrawText(str.c_str(), x, y, 10, col);
 	}
 	static void blitt(Texture2D texture, int tsize, int tile, int x, int y, Color blend=WHITE) {
+		if (!IsTextureValid(texture))  return;
 		int tx = tile % (texture.width / tsize);
 		int ty = tile / (texture.width / tsize);
 		float t = tsize;
@@ -65,6 +73,7 @@ struct GFX {
 		DrawTextureRec(texture, src, dst, blend);
 	}
 	static void blittr(Texture2D texture, int tsize, int tile, int x, int y, float rot, Color blend=WHITE) {
+		if (!IsTextureValid(texture))  return;
 		int tx = tile % (texture.width / tsize);
 		int ty = tile / (texture.width / tsize);
 		float t = tsize;

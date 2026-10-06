@@ -129,11 +129,15 @@ void buffertest2() {
 	gfx.init();
 	gfx.resizable();
 	gfx.usebuffer(160, 160);
+	gfx.loadtexture("sprites", "../wizzardquest4/assets/sprites.png");
 
 	while (!gfx.shouldquit()) {
 		ClearBackground(SKYBLUE);
 		DrawRectangle(0, 0, 20, 20, RED);
 		DrawCircleV({10, 10}, 5, MAROON);
+
+		gfx.blitt(gfx.gettexture("sprites"), 16, 2, 10, 10);
+		gfx.blitt(gfx.gettexture("butt"), 16, 2, 10, 10);
 		
 		gfx.flip();
 	}
