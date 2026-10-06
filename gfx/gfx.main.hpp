@@ -38,7 +38,9 @@ struct GFX {
 	static void begin()   {
 		BeginDrawing();
 		ClearBackground(bgcolor);
-		if (buffer.valid())  BeginTextureMode(buffer.rtexture);
+		if (buffer.valid())
+			BeginTextureMode(buffer.rtexture),
+			ClearBackground(bgcolor);
 	}
 	static void flip() {
 		EndTextureMode();
@@ -46,7 +48,8 @@ struct GFX {
 			string s = to_string(GetFPS());
 			print(s, GetScreenWidth()-font.width(s)-2, 2, GREEN);
 		}
-		if (buffer.valid())  buffer.paint(0, 0);
+		if (buffer.valid())
+			buffer.paint(0, 0);
 		EndDrawing();  // flip
 		begin();  // begin drawing mode for next frame
 	}
