@@ -1,13 +1,13 @@
 #pragma once
 #include "raylib.h"
 #include "qbfont.hpp"
-#include "gfxbuffer.hpp"
+#include "framebuffer.hpp"
 
 struct GFX {
 	struct rect { int x, y, w, h; };
 	// submodules
 	static inline QBFont font;
-	static inline GFXBuffer buffer;
+	static inline FrameBuffer buffer;
 	static inline Assets assets;
 	// vars
 	static inline Color bgcolor = BLACK;
@@ -32,7 +32,7 @@ struct GFX {
 		assets.destroy();
 		CloseWindow();  // Close window and OpenGL context
 	}
-	static void usebuffer(int width, int height, GFXBuffer::SCALE_T scale=GFXBuffer::SCALE_STRETCH_FIT) {
+	static void usebuffer(int width, int height, FrameBuffer::SCALE_T scale=FrameBuffer::SCALE_STRETCH_FIT) {
 		buffer.init(width, height, scale);
 	}
 	static void begin()   {

@@ -1,7 +1,7 @@
 #pragma once
 #include "raylib.h"
 #include "qbfont.hpp"
-#include "gfxbuffer.hpp"
+#include "framebuffer.hpp"
 #include "assets.hpp"
 #include "gfx.main.hpp"
 #include "container.hpp"

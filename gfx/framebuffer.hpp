@@ -1,7 +1,7 @@
 #pragma once
 #include "paintable.hpp"
 
-struct GFXBuffer : Paintable {
+struct FrameBuffer : Paintable {
 	enum SCALE_T { SCALE_DEFAULT, SCALE_PX, SCALE_STRETCH, SCALE_STRETCH_FIT };
 
 	SCALE_T scaletype = SCALE_DEFAULT;

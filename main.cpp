@@ -77,8 +77,6 @@ void mainloop() {
 	int running = 0;
 	gfx.init();
 	gfx.resizable();
-	GFXBuffer buffer;
-	buffer.init(160, 160);
 
 	while (!gfx.shouldquit()) {
 		if ((IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) && IsKeyPressed(KEY_ENTER))
@@ -106,7 +104,7 @@ void mainloop() {
 
 void buffertest() {
 	gfx.init();
-	GFXBuffer buffer;
+	FrameBuffer buffer;
 	buffer.init(160, 160);
 
 	while (!gfx.shouldquit()) {
