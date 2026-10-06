@@ -125,6 +125,21 @@ void buffertest() {
 	cout << buffer.width() << endl;
 }
 
+void buffertest2() {
+	gfx.init();
+	gfx.usebuffer(160, 160);
+
+	while (!gfx.shouldquit()) {
+		ClearBackground(SKYBLUE);
+		DrawRectangle(0, 0, 20, 20, RED);
+		DrawCircleV({10, 10}, 5, MAROON);
+		
+		gfx.flip();
+	}
+
+	gfx.destroy();
+}
+
 int main() {
 	printf("starting Playground...\n");
 	
@@ -137,5 +152,6 @@ int main() {
 	// if (ok)  runtime.start();
 	
 	// mainloop();
-	buffertest();
+	// buffertest();
+	buffertest2();
 }

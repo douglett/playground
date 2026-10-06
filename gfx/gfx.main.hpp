@@ -1,11 +1,13 @@
 #pragma once
 #include "raylib.h"
 #include "qbfont.hpp"
+#include "gfxbuffer.hpp"
 
 struct GFX {
 	struct rect { int x, y, w, h; };
 	// submodules
 	static inline QBFont font;
+	static inline GFXBuffer buffer;
 	// vars
 	static inline Color bgcolor = BLACK;
 	static inline int flag_fps = 1;
@@ -25,17 +27,24 @@ struct GFX {
 	}
 	static void destroy() {
 		font.destroy();
+		buffer.destroy();
 		CloseWindow();  // Close window and OpenGL context
+	}
+	static void usebuffer(int width, int height, GFXBuffer::SCALE_T scale=GFXBuffer::SCALE_PX) {
+		buffer.init(width, height, scale);
 	}
 	static void begin()   {
 		BeginDrawing();
 		ClearBackground(bgcolor);
+		if (buffer.valid())  BeginTextureMode(buffer.rtexture);
 	}
 	static void flip() {
+		EndTextureMode();
 		if (flag_fps) {
 			string s = to_string(GetFPS());
 			print(s, GetScreenWidth()-font.width(s)-2, 2, GREEN);
 		}
+		if (buffer.valid())  buffer.paint(0, 0);
 		EndDrawing();  // flip
 		begin();  // begin drawing mode for next frame
 	}

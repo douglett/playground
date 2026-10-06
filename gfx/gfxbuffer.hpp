@@ -16,11 +16,12 @@ struct GFXBuffer : Paintable {
 		rtexture = {0};
 	}
 
+	int valid()  { return IsRenderTextureValid(rtexture); }
 	int width()  { return rtexture.texture.width; }
 	int height() { return rtexture.texture.height; }
 
 	virtual void paint(int offx, int offy) {
-		if (!IsRenderTextureValid(rtexture))  return;
+		if (!valid())  return;
 		auto& tex = rtexture.texture;
 		DrawTextureRec(tex, { 0, 0, (float)tex.width, (float)-tex.height }, { (float)offx+y, (float)offy+y }, WHITE);
 	}
