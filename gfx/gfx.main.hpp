@@ -30,7 +30,7 @@ struct GFX {
 		buffer.destroy();
 		CloseWindow();  // Close window and OpenGL context
 	}
-	static void usebuffer(int width, int height, GFXBuffer::SCALE_T scale=GFXBuffer::SCALE_PX) {
+	static void usebuffer(int width, int height, GFXBuffer::SCALE_T scale=GFXBuffer::SCALE_STRETCH_FIT) {
 		buffer.init(width, height, scale);
 	}
 	static void begin()   {

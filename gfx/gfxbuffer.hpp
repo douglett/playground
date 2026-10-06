@@ -23,18 +23,32 @@ struct GFXBuffer : Paintable {
 	virtual void paint(int offx, int offy) {
 		if (!valid())  return;
 		auto& tex = rtexture.texture;
-		if (scaletype == SCALE_DEFAULT) {
-			DrawTextureRec(tex, { 0, 0, (float)tex.width, (float)-tex.height }, { (float)offx+y, (float)offy+y }, WHITE);
-		} else if (scaletype == SCALE_PX) {
-			int screenw = GetScreenWidth();
-			int screenh = GetScreenHeight();
-			int scale = min( max(screenw/tex.width, 1), max(screenh/tex.height, 1) );
-			int xx = (screenw - (tex.width *scale)) / 2;
-			int yy = (screenh - (tex.height*scale)) / 2;
-			DrawTexturePro(tex,
-                Rectangle{ 0, 0, (float)tex.width, (float)-tex.height },
-                Rectangle{ (float)xx, (float)yy, (float)tex.width*scale, (float)tex.height*scale },
-                Vector2  {0}, 0, WHITE);
+		int screenw = GetScreenWidth(), screenh = GetScreenHeight();
+		int xx = offx+x, yy = offy+y;
+		float scalex = 1, scaley = 1;
+		// find drawing position & scale
+		if (scaletype == SCALE_PX) {
+			scalex = max(screenw/tex.width, 1);
+			scaley = max(screenh/tex.height, 1);
+			scalex = scaley = min(scalex, scaley);
+			xx = (screenw - (tex.width *scalex)) / 2;
+			yy = (screenh - (tex.height*scaley)) / 2;
+		} else if (scaletype == SCALE_STRETCH) {
+			scalex = screenw/float(tex.width);
+			scaley = screenh/float(tex.height);
+			xx = (screenw - (tex.width *scalex)) / 2;
+			yy = (screenh - (tex.height*scaley)) / 2;
+		} else if (scaletype == SCALE_STRETCH_FIT) {
+			scalex = screenw/float(tex.width);
+			scaley = screenh/float(tex.height);
+			scalex = scaley = min(scalex, scaley);
+			xx = (screenw - (tex.width *scalex)) / 2;
+			yy = (screenh - (tex.height*scaley)) / 2;
 		}
+		// draw
+		DrawTexturePro(tex,
+			Rectangle{ 0, 0, (float)tex.width, (float)-tex.height },
+			Rectangle{ (float)xx, (float)yy, (float)tex.width*scalex, (float)tex.height*scaley },
+			Vector2  {0}, 0, WHITE);
 	}
 };
