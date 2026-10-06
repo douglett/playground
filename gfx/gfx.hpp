@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "qbfont.hpp"
 #include "gfxbuffer.hpp"
+#include "assets.hpp"
 #include "gfx.main.hpp"
 #include "container.hpp"
 #include "shape.hpp"
