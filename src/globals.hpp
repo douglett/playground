@@ -1,5 +1,5 @@
 #pragma once
-#include "../gfx/gfx.hpp"
+#include "../gfxlib/gfx.hpp"
 #include <string>
 #include <vector>
 #include "tokenizer.hpp"

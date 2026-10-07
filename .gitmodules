@@ -1,0 +1,3 @@
+[submodule "gfxlib"]
+	path = gfxlib
+	url = git@github.com:douglett/gfxlib.git
